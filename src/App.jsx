@@ -1,15 +1,9 @@
-import './App.css';
-import Quiz from './Quiz';
+import QuizApp from "./QuizApp";
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Quiz App</h1>
-      </header>
-      <div className="card">
-        <Quiz />
-      </div>
+    <div className="min-h-screen bg-gray-100">
+      <QuizApp />
     </div>
   );
 }
