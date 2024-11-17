@@ -1,10 +1,18 @@
-import QuizApp from "./QuizApp";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Layout from './components/Layout';
+import QuizList from './pages/QuizList';
+import QuizDetail from './pages/QuizDetail';
 
 function App() {
   return (
-    <div className="min-h-screen bg-gray-100">
-      <QuizApp />
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<QuizList />} />
+          <Route path="quiz/:id" element={<QuizDetail />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 

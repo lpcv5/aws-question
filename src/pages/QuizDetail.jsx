@@ -1,6 +1,6 @@
-// src/QuizApp.jsx
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import questionsData from "../assets/dop.json"
 
 // 定义颜色状态
 const COLOR_STATES = {
@@ -12,10 +12,9 @@ const COLOR_STATES = {
   BLUE_DARK: "bg-blue-500 hover:bg-blue-600",
 };
 
-function QuizApp() {
+function QuizDetail() {
   // 状态管理
   const [questions, setQuestions] = useState([]);
-  const [examOutline, setExamOutline] = useState({});
   const [showAnswerCard, setShowAnswerCard] = useState(false);
   const [direction, setDirection] = useState("next");
   const [{ quizState, currentQuestionIndex }, setState] = useState(() =>
@@ -41,21 +40,8 @@ function QuizApp() {
     };
   }
 
-  // 获取问题和考试大纲
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [questionsData, outlineData] = await Promise.all([
-          fetch("/dop.json").then((res) => res.json()),
-          fetch("/exam_outline.json").then((res) => res.json()),
-        ]);
         setQuestions(questionsData.sort((a, b) => a.no - b.no));
-        setExamOutline(outlineData);
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-      }
-    };
-    fetchData();
   }, []);
 
   // 同步 quizState 到 localStorage
@@ -66,7 +52,7 @@ function QuizApp() {
   const currentQuestion = questions[currentQuestionIndex];
 
   // 辅助函数：确定按钮颜色
-  const getColorState = (answered, correct, isSelected) => {
+  const getColorState = (answered, correct) => {
     if (!answered || answered.length === 0) return COLOR_STATES.GREY;
 
     const answeredSet = new Set(answered);
@@ -143,31 +129,19 @@ function QuizApp() {
     return getColorState(answered, correct, false);
   };
 
-  // 渲染考试大纲内容
-  const renderExamOutline = (field) => {
-    const [mainSection, subSection] = field.split(".");
-    const content = examOutline?.[mainSection]?.[subSection];
-    if (!content) return null;
+  const renderReason = (reason) => {
+    // 将字符串按\n分割成数组
+    const lines = reason.split('\n');
 
     return (
       <div className="mt-4">
-        <h3 className="font-bold text-lg mb-2">{content.name}</h3>
-        <div className="mb-2">
-          <h4 className="font-semibold">知识点：</h4>
-          <ul className="list-disc list-inside">
-            {content.knows.map((item, index) => (
-              <li key={index}>{item}</li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <h4 className="font-semibold">技能点：</h4>
-          <ul className="list-disc list-inside">
-            {content.skills.map((item, index) => (
-              <li key={index}>{item}</li>
-            ))}
-          </ul>
-        </div>
+        {lines.map((line, index) => (
+          <div key={index}>
+            {line}
+            {/* 如果不是最后一行,添加换行 */}
+            {index < lines.length - 1 && <br />}
+          </div>
+        ))}
       </div>
     );
   };
@@ -322,7 +296,7 @@ function QuizApp() {
                       <p className="font-bold text-green-600 mb-4">
                         正确答案: {currentQuestion.best.join(", ")}
                       </p>
-                      {renderExamOutline(currentQuestion.field)}
+                      {renderReason(currentQuestion.reason)}
                     </motion.div>
                   )}
                 </motion.div>
@@ -365,4 +339,4 @@ function QuizApp() {
   );
 }
 
-export default QuizApp;
+export default QuizDetail;
