@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import questionsData from "../assets/dop.json"
+import questionsData from "../assets/dop.json";
 
 // 定义颜色状态
 const COLOR_STATES = {
@@ -41,7 +41,7 @@ function QuizDetail() {
   }
 
   useEffect(() => {
-        setQuestions(questionsData.sort((a, b) => a.no - b.no));
+    setQuestions(questionsData.sort((a, b) => a.no - b.no));
   }, []);
 
   // 同步 quizState 到 localStorage
@@ -131,14 +131,13 @@ function QuizDetail() {
 
   const renderReason = (reason) => {
     // 将字符串按\n分割成数组
-    const lines = reason.split('\n');
+    const lines = reason.split("\n");
 
     return (
       <div className="mt-4">
         {lines.map((line, index) => (
           <div key={index}>
             {line}
-            {/* 如果不是最后一行,添加换行 */}
             {index < lines.length - 1 && <br />}
           </div>
         ))}
@@ -210,6 +209,36 @@ function QuizDetail() {
           </div>
         )}
 
+        {/* 导航按钮 */}
+        <div className="flex justify-between mt-6 mx-4">
+          <button
+            onClick={previousQuestion}
+            disabled={currentQuestionIndex === 0}
+            className={`${
+              currentQuestionIndex === 0
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-blue-600"
+            } ${
+              COLOR_STATES.BLUE_DARK
+            } text-white px-4 py-2 rounded-md shadow transition duration-300 ease-in-out`}
+          >
+            上一题
+          </button>
+          <button
+            onClick={nextQuestion}
+            disabled={currentQuestionIndex === questions.length - 1}
+            className={`${
+              currentQuestionIndex === questions.length - 1
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-blue-600"
+            } ${
+              COLOR_STATES.BLUE_DARK
+            } text-white px-4 py-2 rounded-md shadow transition duration-300 ease-in-out`}
+          >
+            下一题
+          </button>
+        </div>
+
         {/* 问题内容 */}
         <div className="p-6">
           <motion.div layout>
@@ -232,9 +261,6 @@ function QuizDetail() {
                   </h1>
                   <p className="mb-4 text-gray-700">
                     {currentQuestion.question}
-                  </p>
-                  <p className="mb-4 text-sm text-gray-600">
-                    请选择 {currentQuestion.choose} 项
                   </p>
                   <div className="space-y-4">
                     {Object.entries(currentQuestion.options).map(
@@ -303,36 +329,6 @@ function QuizDetail() {
               )}
             </AnimatePresence>
           </motion.div>
-
-          {/* 导航按钮 */}
-          <div className="flex justify-between mt-6">
-            <button
-              onClick={previousQuestion}
-              disabled={currentQuestionIndex === 0}
-              className={`${
-                currentQuestionIndex === 0
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:bg-blue-600"
-              } ${
-                COLOR_STATES.BLUE_DARK
-              } text-white px-4 py-2 rounded-md shadow transition duration-300 ease-in-out`}
-            >
-              上一题
-            </button>
-            <button
-              onClick={nextQuestion}
-              disabled={currentQuestionIndex === questions.length - 1}
-              className={`${
-                currentQuestionIndex === questions.length - 1
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:bg-blue-600"
-              } ${
-                COLOR_STATES.BLUE_DARK
-              } text-white px-4 py-2 rounded-md shadow transition duration-300 ease-in-out`}
-            >
-              下一题
-            </button>
-          </div>
         </div>
       </div>
     </div>
