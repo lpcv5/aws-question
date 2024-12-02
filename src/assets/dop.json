@@ -24,7 +24,7 @@
       "AWS WAF",
       "AWS Config"
     ],
-    "reason": "6.2"
+    "reason": "通过将Firewall Manager授权给security account并创建相应policy，实现在Organizations层面自动为新建ALB和API Gateway关联WAF web ACLs，同时支持对已有不合规资源进行自动修复"
   },
   {
     "no": 5,
@@ -68,11 +68,9 @@
       "Amazon SNS",
       "AWS Config",
       "Amazon EventBridge",
-      "AWS Lambda",
-      "AWS Trusted Advisor",
-      "AWS Security Hub"
+      "AWS Lambda"
     ],
-    "reason": "6.2"
+    "reason": ""
   },
   {
     "no": 1,
@@ -265,7 +263,7 @@
       "F": "启用访问控制属性并将 IdP 的属性映射为键值对可以有效地控制访问权限，符合最小权限原则。"
     },
     "service": ["AWS Control Tower", "AWS IAM Identity Center", "SAML 2.0"],
-    "reason": "6.1"
+    "reason": "题目考察AWS IAM Identity Center(SSO)的权限管理,核心知识点包括:\n1. 权限集(Permission Sets)的使用 - 用于定义访问策略和权限范围\n2. IdP集成 - 通过SAML 2.0与外部身份提供商集成\n3. ABAC(基于属性的访问控制) - 通过映射IdP属性实现精细化权限控制\n4. 最小权限原则 - 如何通过组和权限集合理分配权限\n5. Control Tower环境下的身份管理 - landing zone的身份架构设计\n\n正确答案应为BCF而非ABC,因为:\nB - 使用permission sets定义权限\nC - 在IdP中创建组并分配权限集\nF - 启用ABAC并映射IdP属性(而不是E中的标签)\n\n关键是理解在SSO环境中使用permission sets而不是IAM policies,使用IdP attributes而不是tags来实现ABAC"
   },
   {
     "no": 15,
@@ -285,7 +283,7 @@
       "D": "这个选项仍然允许实例在安装过程中访问互联网，尽管是限制性的，但不符合新的安全规定。"
     },
     "service": ["Amazon EC2", "Amazon S3", "IAM", "VPC"],
-    "reason": "2.1"
+    "reason": "题目分析与解决方案:\n\n1. 问题场景:\n- EC2实例需要在启动时安装应用程序\n- 新的安全要求:实例不能访问互联网\n- 当前问题:实例健康但应用未安装\n\n2. 选择C的理由:\n(a) VPC Endpoint for S3:\n- 允许实例在不访问互联网的情况下访问S3\n- 通过内部AWS网络访问S3服务\n\n(b) IAM实例配置文件:\n- 提供必要的S3访问权限\n- 符合最小权限原则\n\n3. 为什么排除其他选项:\nA: 使用弹性IP仍需要互联网访问\nB: NAT网关提供互联网访问,违反要求\nD: 安全组规则仍允许外部连接\n\n4. 最佳实践:\n- 使用VPC Endpoints实现私有连接\n- 利用S3存储应用程序制品\n- 通过IAM角色管理访问权限\n- 完全避免互联网依赖"
   },
   {
     "no": 12,
@@ -307,7 +305,7 @@
       "E": "不是最优选项。增加超时时间可能有助于处理更复杂的函数，但不会解决并发处理能力不足的问题。"
     },
     "service": ["AWS Lambda", "Amazon SQS", "Amazon DynamoDB"],
-    "reason": "3.2"
+    "reason": "场景分析与解决方案:\n\n1. 问题现象:\n- 订单历史页面显示订单处理状态存在延迟\n- 系统组件: Lambda(有预留并发) -> SQS -> DynamoDB(启用自动扩展)\n\n2. 解决方案(AD正确):\nA. 检查SQS的ApproximateAgeOfOldestMessage指标\n- 如果消息处理时间过长,说明Lambda处理能力不足\n- 增加Lambda并发限制以提升处理能力\n\nD. 检查DynamoDB的WriteThrottleEvents指标\n- 如果存在写入节流,说明写入容量不足\n- 提高自动扩展策略的最大WCU限制\n\n3. 为什么排除其他选项:\nB. 重试策略不能解决处理延迟问题\nC. 可见性超时与处理延迟无直接关系\nE. Lambda超时不是性能瓶颈\n\n核心是识别和解决两个可能的瓶颈:\n- Lambda处理能力\n- DynamoDB写入容量"
   },
   {
     "no": 16,
@@ -332,7 +330,7 @@
       "Amazon EventBridge",
       "Amazon CloudWatch"
     ],
-    "reason": "1.1"
+    "reason": "题目分析与解决方案:\n\n1. 问题场景:\n- 使用CodeCommit和CodePipeline\n- main分支代码更新应触发pipeline\n- 推送代码后10分钟pipeline无反应\n\n2. 为什么选A:\n(a) EventBridge规则是关键:\n- CodePipeline通过EventBridge监听CodeCommit变更\n- Console创建pipeline时会自动创建规则\n- CLI创建时需手动配置\n\n(b) 无反应现象分析:\n- 如果是权限问题(选项B),会立即报错\n- 10分钟无反应表明触发机制可能缺失\n\n3. 为什么排除其他选项:\nB: 权限问题会立即显示错误\nC: 开发者已成功推送代码,权限正常\nD: Pipeline未启动,不会有相关日志\n\n4. 最佳实践:\n- 检查EventBridge规则配置\n- 确保规则正确关联代码仓库和分支\n- 验证规则状态是否启用"
   },
   {
     "no": 20,
@@ -344,11 +342,11 @@
       "C": "配置一个事件源为 AWS Health，服务为 EC2，并且事件类型指示实例维护。目标是一个新创建的 AWS Lambda 函数，该函数注册一个自动化任务在维护窗口期间重启 EC2 实例。",
       "D": "配置一个事件源为 EC2 并且事件类型指示实例维护。目标是一个新创建的 AWS Lambda 函数，该函数注册一个自动化任务在维护窗口期间重启 EC2 实例。"
     },
-    "best": ["C"],
+    "best": ["A"],
     "analysis": {
-      "A": "虽然这个选项正确地指出了事件源和事件类型，但它没有提到如何确保在维护窗口期间进行重启，因此不是最佳选项。",
+      "A": "直接使用AWS Health事件触发，使用现成的Systems Manager文档(AWS-RestartEC2Instance)，实现简单，无需额外组件",
       "B": "这个选项错误地将事件源配置为 Systems Manager，而不是 AWS Health，这不符合题目要求。",
-      "C": "这个选项正确地配置了事件源和事件类型，并且通过创建 Lambda 函数来注册自动化任务，确保在维护窗口期间进行重启，因此是最佳选项。",
+      "C": "引入不必要的Lambda函数增加复杂性,额外的维护成本,过度设计，因为Systems Manager已经能够直接处理",
       "D": "这个选项错误地将事件源配置为 EC2，而不是 AWS Health，这不符合题目要求。"
     },
     "service": [
@@ -358,7 +356,7 @@
       "Amazon EventBridge",
       "AWS Lambda"
     ],
-    "reason": "2.3"
+    "reason": "题目分析与解决方案:\n\n1. 关键需求:\n- 响应AWS Health通知\n- 自动重启EC2实例\n- 使用Systems Manager\n- 通过EventBridge规则实现\n\n2. 为什么选A:\n(a) 直接性和简单性:\n- 直接使用AWS Health作为事件源\n- 使用现有Systems Manager功能\n- 无需额外Lambda函数\n\n(b) 技术合理性:\n- Systems Manager文档可直接重启EC2\n- AWS-RestartEC2Instance是现成的自动化文档\n- 符合最小复杂度原则\n\n3. 为什么排除其他选项:\nB: 事件源错误\nC: 引入不必要的Lambda\nD: 事件源错误且复杂化解决方案\n\n4. 实施步骤:\n- 配置AWS Health事件源\n- 选择EC2服务和维护事件类型\n- 使用Systems Manager文档作为目标"
   },
   {
     "no": 14,
@@ -386,7 +384,7 @@
       "AWS CodePipeline",
       "AWS CodeBuild"
     ],
-    "reason": "1.4"
+    "reason": "题目分析与解决方案:\n\n1. 核心需求:\n- 构建无服务器应用的持续部署流水线\n- 减少失败部署对用户的影响\n- 监控潜在问题\n\n2. 选择A的理由:\n(a) 使用AWS SAM:\n- 专门为无服务器应用设计的框架\n- 简化Lambda函数的部署和管理\n\n(b) CodeDeploy + Canary部署:\n- Canary10Percent15Minutes策略:\n - 先部署10%流量\n - 15分钟内逐步完成剩余流量迁移\n- 能有效降低部署风险\n\n(c) CloudWatch告警:\n- 实时监控函数健康状况\n- 支持自动回滚\n\n3. 为什么排除其他选项:\nB: 手动审批降低了自动化程度\nC: 缺乏分阶段部署策略\nD: CodeBuild主要用于构建测试,不适合做部署控制\n\n4. 最佳实践:\n- 使用专业的无服务器框架(SAM)\n- 实施渐进式部署策略\n- 配置自动监控和回滚机制"
   },
   {
     "no": 21,
@@ -441,7 +439,7 @@
       "AWS Config",
       "AWS Lambda"
     ],
-    "reason": "2.2"
+    "reason": "题目分析与解决方案:\n\n1. 核心问题:\n- 使用AFT创建新账户时默认为Basic Support\n- 需要自动配置为Enterprise Support\n- 使用AWS Organizations和Control Tower管理\n\n2. 为什么选D:\n(a) AFT特性标志:\n- aft_feature_enterprise_support参数\n- 专门用于控制Support计划级别\n- 官方推荐的解决方案\n\n(b) 实现简单直接:\n- 只需修改配置参数\n- 重新部署AFT即可生效\n- 适用于所有新账户\n\n3. 为什么排除其他选项:\nA: AWS Config不能直接更改Support计划\nB: 通过Support ticket处理效率低\nC: Control Tower参数中无此设置\n\n4. 实施步骤:\n- 设置aft_feature_enterprise_support=true\n- 重新部署AFT\n- 验证新账户Support计划"
   },
   {
     "no": 13,
@@ -466,7 +464,7 @@
       "AWS Config",
       "AWS Systems Manager"
     ],
-    "reason": "2.3"
+    "reason": "题目分析与解决方案:\n\n1. 问题场景:\n- 单账户中运行数百个EC2实例\n- 实例数量动态变化(每小时都有新建和终止)\n- 已有实例和新建实例都可能缺少instance profile\n- 安全要求:所有实例必须附加instance profile\n\n2. 选择B的理由:\n- AWS Config能持续评估资源配置合规性\n- ec2-instance-profile-attached规则专门用于检查EC2实例是否附加了instance profile\n- 自动修复功能可以通过Systems Manager Automation执行修复\n- 能同时处理现有和新建实例\n\n3. 为什么排除其他选项:\nA: EventBridge + RunInstances只能处理新实例\nC: StartInstances事件仅在实例启动时触发\nD: iam-role-managed-policy-check规则不适用于此场景\n\n4. 最佳实践:\n- 使用AWS Config进行持续合规性检查\n- 配置自动修复动作\n- 使用Systems Manager Automation执行标准化的修复流程"
   },
   {
     "no": 18,
@@ -492,7 +490,7 @@
       "IPv6",
       "VPC"
     ],
-    "reason": "2.1"
+    "reason": "题目分析与解决方案:\n\n1. 关键需求:\n- 支持IPv6客户端访问\n- EC2实例在私有子网中\n- 使用ALB作为负载均衡器\n- 通过CloudFormation部署\n\n2. 为什么选D:\n(a) 双栈配置策略:\n- VPC和ALB子网需要IPv6 CIDR\n- ALB配置dualstack支持双协议栈\n- 无需修改后端EC2配置\n\n(b) 架构合理性:\n- 前端ALB处理IPv6流量\n- 后端EC2维持IPv4通信\n- 符合分层设计原则\n\n3. 为什么排除其他选项:\nA: 无需配置EC2 IPv6\nB: 私有子网不能分配弹性IP\nC: 不需要替换ALB为NLB\n\n4. 实现要点:\n- VPC和ALB子网配置IPv6 CIDR\n- ALB设置dualstack类型\n- 配置目标组和443端口监听器"
   },
   {
     "no": 17,
@@ -512,7 +510,7 @@
       "D": "此选项不正确，因为创建自定义事件总线并订阅所有 AWS 服务的事件可能会导致不必要的复杂性和开销，而且不是针对性的解决方案。"
     },
     "service": ["Amazon EC2", "AWS Lambda", "Amazon SNS", "Amazon EventBridge"],
-    "reason": "2.3"
+    "reason": "题目分析与解决方案:\n\n1. 需求要点:\n- 近实时检测安全组规则变更\n- 自动移除不受限制的规则\n- 发送邮件通知安全团队\n- Lambda函数已准备就绪\n\n2. 为什么选C:\n(a) EventBridge默认事件总线:\n- 原生接收AWS服务事件\n- 支持EC2安全组事件模式匹配\n- 可实时触发Lambda函数\n\n(b) 实现近实时要求:\n- 事件驱动架构\n- 变更即触发\n- 无延迟响应\n\n3. 为什么排除其他选项:\nA: 架构设计不合理,SNS不应作为触发源\nB: 每小时调度不满足近实时要求\nD: 自定义事件总线不必要且成本更高\n\n4. 解决方案架构:\nEventBridge(默认事件总线) -> Lambda函数 -> SNS通知"
   },
   {
     "no": 22,
