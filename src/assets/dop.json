@@ -24,7 +24,7 @@
       "AWS WAF",
       "AWS Config"
     ],
-    "reason": "6.2"
+    "reason": "通过将Firewall Manager授权给security account并创建相应policy，实现在Organizations层面自动为新建ALB和API Gateway关联WAF web ACLs，同时支持对已有不合规资源进行自动修复"
   },
   {
     "no": 5,
@@ -68,11 +68,9 @@
       "Amazon SNS",
       "AWS Config",
       "Amazon EventBridge",
-      "AWS Lambda",
-      "AWS Trusted Advisor",
-      "AWS Security Hub"
+      "AWS Lambda"
     ],
-    "reason": "6.2"
+    "reason": ""
   },
   {
     "no": 1,
@@ -265,7 +263,7 @@
       "F": "启用访问控制属性并将 IdP 的属性映射为键值对可以有效地控制访问权限，符合最小权限原则。"
     },
     "service": ["AWS Control Tower", "AWS IAM Identity Center", "SAML 2.0"],
-    "reason": "6.1"
+    "reason": "题目考察AWS IAM Identity Center(SSO)的权限管理,核心知识点包括:\n1. 权限集(Permission Sets)的使用 - 用于定义访问策略和权限范围\n2. IdP集成 - 通过SAML 2.0与外部身份提供商集成\n3. ABAC(基于属性的访问控制) - 通过映射IdP属性实现精细化权限控制\n4. 最小权限原则 - 如何通过组和权限集合理分配权限\n5. Control Tower环境下的身份管理 - landing zone的身份架构设计\n\n正确答案应为BCF而非ABC,因为:\nB - 使用permission sets定义权限\nC - 在IdP中创建组并分配权限集\nF - 启用ABAC并映射IdP属性(而不是E中的标签)\n\n关键是理解在SSO环境中使用permission sets而不是IAM policies,使用IdP attributes而不是tags来实现ABAC"
   },
   {
     "no": 15,
@@ -285,7 +283,7 @@
       "D": "这个选项仍然允许实例在安装过程中访问互联网，尽管是限制性的，但不符合新的安全规定。"
     },
     "service": ["Amazon EC2", "Amazon S3", "IAM", "VPC"],
-    "reason": "2.1"
+    "reason": "题目分析与解决方案:\n\n1. 问题场景:\n- EC2实例需要在启动时安装应用程序\n- 新的安全要求:实例不能访问互联网\n- 当前问题:实例健康但应用未安装\n\n2. 选择C的理由:\n(a) VPC Endpoint for S3:\n- 允许实例在不访问互联网的情况下访问S3\n- 通过内部AWS网络访问S3服务\n\n(b) IAM实例配置文件:\n- 提供必要的S3访问权限\n- 符合最小权限原则\n\n3. 为什么排除其他选项:\nA: 使用弹性IP仍需要互联网访问\nB: NAT网关提供互联网访问,违反要求\nD: 安全组规则仍允许外部连接\n\n4. 最佳实践:\n- 使用VPC Endpoints实现私有连接\n- 利用S3存储应用程序制品\n- 通过IAM角色管理访问权限\n- 完全避免互联网依赖"
   },
   {
     "no": 12,
@@ -307,7 +305,7 @@
       "E": "不是最优选项。增加超时时间可能有助于处理更复杂的函数，但不会解决并发处理能力不足的问题。"
     },
     "service": ["AWS Lambda", "Amazon SQS", "Amazon DynamoDB"],
-    "reason": "3.2"
+    "reason": "场景分析与解决方案:\n\n1. 问题现象:\n- 订单历史页面显示订单处理状态存在延迟\n- 系统组件: Lambda(有预留并发) -> SQS -> DynamoDB(启用自动扩展)\n\n2. 解决方案(AD正确):\nA. 检查SQS的ApproximateAgeOfOldestMessage指标\n- 如果消息处理时间过长,说明Lambda处理能力不足\n- 增加Lambda并发限制以提升处理能力\n\nD. 检查DynamoDB的WriteThrottleEvents指标\n- 如果存在写入节流,说明写入容量不足\n- 提高自动扩展策略的最大WCU限制\n\n3. 为什么排除其他选项:\nB. 重试策略不能解决处理延迟问题\nC. 可见性超时与处理延迟无直接关系\nE. Lambda超时不是性能瓶颈\n\n核心是识别和解决两个可能的瓶颈:\n- Lambda处理能力\n- DynamoDB写入容量"
   },
   {
     "no": 16,
@@ -332,7 +330,7 @@
       "Amazon EventBridge",
       "Amazon CloudWatch"
     ],
-    "reason": "1.1"
+    "reason": "题目分析与解决方案:\n\n1. 问题场景:\n- 使用CodeCommit和CodePipeline\n- main分支代码更新应触发pipeline\n- 推送代码后10分钟pipeline无反应\n\n2. 为什么选A:\n(a) EventBridge规则是关键:\n- CodePipeline通过EventBridge监听CodeCommit变更\n- Console创建pipeline时会自动创建规则\n- CLI创建时需手动配置\n\n(b) 无反应现象分析:\n- 如果是权限问题(选项B),会立即报错\n- 10分钟无反应表明触发机制可能缺失\n\n3. 为什么排除其他选项:\nB: 权限问题会立即显示错误\nC: 开发者已成功推送代码,权限正常\nD: Pipeline未启动,不会有相关日志\n\n4. 最佳实践:\n- 检查EventBridge规则配置\n- 确保规则正确关联代码仓库和分支\n- 验证规则状态是否启用"
   },
   {
     "no": 20,
@@ -344,11 +342,11 @@
       "C": "配置一个事件源为 AWS Health，服务为 EC2，并且事件类型指示实例维护。目标是一个新创建的 AWS Lambda 函数，该函数注册一个自动化任务在维护窗口期间重启 EC2 实例。",
       "D": "配置一个事件源为 EC2 并且事件类型指示实例维护。目标是一个新创建的 AWS Lambda 函数，该函数注册一个自动化任务在维护窗口期间重启 EC2 实例。"
     },
-    "best": ["C"],
+    "best": ["A"],
     "analysis": {
-      "A": "虽然这个选项正确地指出了事件源和事件类型，但它没有提到如何确保在维护窗口期间进行重启，因此不是最佳选项。",
+      "A": "直接使用AWS Health事件触发，使用现成的Systems Manager文档(AWS-RestartEC2Instance)，实现简单，无需额外组件",
       "B": "这个选项错误地将事件源配置为 Systems Manager，而不是 AWS Health，这不符合题目要求。",
-      "C": "这个选项正确地配置了事件源和事件类型，并且通过创建 Lambda 函数来注册自动化任务，确保在维护窗口期间进行重启，因此是最佳选项。",
+      "C": "引入不必要的Lambda函数增加复杂性,额外的维护成本,过度设计，因为Systems Manager已经能够直接处理",
       "D": "这个选项错误地将事件源配置为 EC2，而不是 AWS Health，这不符合题目要求。"
     },
     "service": [
@@ -358,7 +356,7 @@
       "Amazon EventBridge",
       "AWS Lambda"
     ],
-    "reason": "2.3"
+    "reason": "题目分析与解决方案:\n\n1. 关键需求:\n- 响应AWS Health通知\n- 自动重启EC2实例\n- 使用Systems Manager\n- 通过EventBridge规则实现\n\n2. 为什么选A:\n(a) 直接性和简单性:\n- 直接使用AWS Health作为事件源\n- 使用现有Systems Manager功能\n- 无需额外Lambda函数\n\n(b) 技术合理性:\n- Systems Manager文档可直接重启EC2\n- AWS-RestartEC2Instance是现成的自动化文档\n- 符合最小复杂度原则\n\n3. 为什么排除其他选项:\nB: 事件源错误\nC: 引入不必要的Lambda\nD: 事件源错误且复杂化解决方案\n\n4. 实施步骤:\n- 配置AWS Health事件源\n- 选择EC2服务和维护事件类型\n- 使用Systems Manager文档作为目标"
   },
   {
     "no": 14,
@@ -386,7 +384,7 @@
       "AWS CodePipeline",
       "AWS CodeBuild"
     ],
-    "reason": "1.4"
+    "reason": "题目分析与解决方案:\n\n1. 核心需求:\n- 构建无服务器应用的持续部署流水线\n- 减少失败部署对用户的影响\n- 监控潜在问题\n\n2. 选择A的理由:\n(a) 使用AWS SAM:\n- 专门为无服务器应用设计的框架\n- 简化Lambda函数的部署和管理\n\n(b) CodeDeploy + Canary部署:\n- Canary10Percent15Minutes策略:\n - 先部署10%流量\n - 15分钟内逐步完成剩余流量迁移\n- 能有效降低部署风险\n\n(c) CloudWatch告警:\n- 实时监控函数健康状况\n- 支持自动回滚\n\n3. 为什么排除其他选项:\nB: 手动审批降低了自动化程度\nC: 缺乏分阶段部署策略\nD: CodeBuild主要用于构建测试,不适合做部署控制\n\n4. 最佳实践:\n- 使用专业的无服务器框架(SAM)\n- 实施渐进式部署策略\n- 配置自动监控和回滚机制"
   },
   {
     "no": 21,
@@ -398,12 +396,12 @@
       "C": "利用 AWS CodePipeline 的构建操作，并使用 AWS Secrets Manager 加密工件。",
       "D": "使用 AWS CodeBuild 并启用工件加密来替换在 EC2 实例上运行的 Jenkins。"
     },
-    "best": ["B"],
+    "best": ["D"],
     "analysis": {
       "A": "虽然自动化打补丁和升级是有益的，但这个选项没有直接解决构建工件的加密问题。",
-      "B": "这个选项通过将 Jenkins 部署到 Amazon ECS 并使用 S3 的默认加密功能来存储构建工件，直接解决了问题，同时也简化了 Jenkins 的管理。",
-      "C": "虽然使用 AWS CodePipeline 和 Secrets Manager 可以实现加密，但这需要更多的配置和管理，而且没有利用现有的 Jenkins 设置。",
-      "D": "替换 Jenkins 可能导致额外的迁移和配置工作，而且 AWS CodeBuild 虽然提供了加密，但不一定比选项 B 更易于维护。"
+      "B": "通过容器化和S3加密解决问题，但仍需维护Jenkins，不是最易维护的方案。",
+      "C": "虽然使用 AWS CodePipeline 和 Secrets Manager 可以实现加密，但这需要更多的配置和管理，而且还需设置 Jenkins 来适配。",
+      "D": "使用完全托管的CodeBuild服务自带制品加密功能，无需维护，是最易维护的解决方案。"
     },
     "service": [
       "Amazon EC2",
@@ -415,7 +413,7 @@
       "AWS Secrets Manager",
       "AWS CodeBuild"
     ],
-    "reason": "1.4"
+    "reason": "解析为什么选D:\n\n1. 关键考点:\n- 最易维护(MOST maintainable)的解决方案\n- 需要加密构建产物\n- 当前使用Jenkins需要修补和升级\n\n2. 为什么选D的理由:\n(a) 完全托管服务优势:\n- CodeBuild是完全托管的服务\n- 无需管理补丁和升级\n- 内置构建产物加密功能\n\n(b) 简化维护:\n- 消除EC2实例管理\n- 自动扩展\n- AWS负责底层基础设施\n\n3. 为什么不选其他选项:\nA: 仍需管理EC2实例\nB: 仍需维护Jenkins\nC: 引入不必要的复杂性\n\n4. 实施考虑:\n- 虽然迁移需要工作量\n- 但从长期维护角度最优\n- 符合题目要求的'最易维护'标准"
   },
   {
     "no": 19,
@@ -441,7 +439,7 @@
       "AWS Config",
       "AWS Lambda"
     ],
-    "reason": "2.2"
+    "reason": "题目分析与解决方案:\n\n1. 核心问题:\n- 使用AFT创建新账户时默认为Basic Support\n- 需要自动配置为Enterprise Support\n- 使用AWS Organizations和Control Tower管理\n\n2. 为什么选D:\n(a) AFT特性标志:\n- aft_feature_enterprise_support参数\n- 专门用于控制Support计划级别\n- 官方推荐的解决方案\n\n(b) 实现简单直接:\n- 只需修改配置参数\n- 重新部署AFT即可生效\n- 适用于所有新账户\n\n3. 为什么排除其他选项:\nA: AWS Config不能直接更改Support计划\nB: 通过Support ticket处理效率低\nC: Control Tower参数中无此设置\n\n4. 实施步骤:\n- 设置aft_feature_enterprise_support=true\n- 重新部署AFT\n- 验证新账户Support计划"
   },
   {
     "no": 13,
@@ -466,7 +464,7 @@
       "AWS Config",
       "AWS Systems Manager"
     ],
-    "reason": "2.3"
+    "reason": "题目分析与解决方案:\n\n1. 问题场景:\n- 单账户中运行数百个EC2实例\n- 实例数量动态变化(每小时都有新建和终止)\n- 已有实例和新建实例都可能缺少instance profile\n- 安全要求:所有实例必须附加instance profile\n\n2. 选择B的理由:\n- AWS Config能持续评估资源配置合规性\n- ec2-instance-profile-attached规则专门用于检查EC2实例是否附加了instance profile\n- 自动修复功能可以通过Systems Manager Automation执行修复\n- 能同时处理现有和新建实例\n\n3. 为什么排除其他选项:\nA: EventBridge + RunInstances只能处理新实例\nC: StartInstances事件仅在实例启动时触发\nD: iam-role-managed-policy-check规则不适用于此场景\n\n4. 最佳实践:\n- 使用AWS Config进行持续合规性检查\n- 配置自动修复动作\n- 使用Systems Manager Automation执行标准化的修复流程"
   },
   {
     "no": 18,
@@ -492,7 +490,7 @@
       "IPv6",
       "VPC"
     ],
-    "reason": "2.1"
+    "reason": "题目分析与解决方案:\n\n1. 关键需求:\n- 支持IPv6客户端访问\n- EC2实例在私有子网中\n- 使用ALB作为负载均衡器\n- 通过CloudFormation部署\n\n2. 为什么选D:\n(a) 双栈配置策略:\n- VPC和ALB子网需要IPv6 CIDR\n- ALB配置dualstack支持双协议栈\n- 无需修改后端EC2配置\n\n(b) 架构合理性:\n- 前端ALB处理IPv6流量\n- 后端EC2维持IPv4通信\n- 符合分层设计原则\n\n3. 为什么排除其他选项:\nA: 无需配置EC2 IPv6\nB: 私有子网不能分配弹性IP\nC: 不需要替换ALB为NLB\n\n4. 实现要点:\n- VPC和ALB子网配置IPv6 CIDR\n- ALB设置dualstack类型\n- 配置目标组和443端口监听器"
   },
   {
     "no": 17,
@@ -512,7 +510,7 @@
       "D": "此选项不正确，因为创建自定义事件总线并订阅所有 AWS 服务的事件可能会导致不必要的复杂性和开销，而且不是针对性的解决方案。"
     },
     "service": ["Amazon EC2", "AWS Lambda", "Amazon SNS", "Amazon EventBridge"],
-    "reason": "2.3"
+    "reason": "题目分析与解决方案:\n\n1. 需求要点:\n- 近实时检测安全组规则变更\n- 自动移除不受限制的规则\n- 发送邮件通知安全团队\n- Lambda函数已准备就绪\n\n2. 为什么选C:\n(a) EventBridge默认事件总线:\n- 原生接收AWS服务事件\n- 支持EC2安全组事件模式匹配\n- 可实时触发Lambda函数\n\n(b) 实现近实时要求:\n- 事件驱动架构\n- 变更即触发\n- 无延迟响应\n\n3. 为什么排除其他选项:\nA: 架构设计不合理,SNS不应作为触发源\nB: 每小时调度不满足近实时要求\nD: 自定义事件总线不必要且成本更高\n\n4. 解决方案架构:\nEventBridge(默认事件总线) -> Lambda函数 -> SNS通知"
   },
   {
     "no": 22,
@@ -539,7 +537,7 @@
       "IAM",
       "AWS OpsWorks"
     ],
-    "reason": "2.1"
+    "reason": "解析为什么选B:\n\n1. 问题核心:\n- S3桶在删除stack时未被删除\n- 需要最高效的方式确保所有资源被删除\n- S3桶非空时无法直接删除\n\n2. 为什么选B是最佳方案:\n(a) 技术原因:\n- CloudFormation无法直接删除非空S3桶\n- 需要先清空桶内对象才能删除\n- Custom Resource + Lambda可以自动化此过程\n\n(b) 实现细节:\n- Lambda函数在删除事件触发时清空桶\n- DependsOn确保正确的删除顺序\n- 完全自动化的解决方案\n\n3. 为什么排除其他选项:\nA: DeletionPolicy不能强制删除非空桶\nC: 手动操作不是自动化解决方案\nD: 使用OpsWorks过于复杂且不必要\n\n4. 最佳实践:\n- 使用Custom Resource处理特殊删除需求\n- 确保正确的IAM权限\n- 维护自动化流程"
   },
   {
     "no": 23,
@@ -552,13 +550,13 @@
       "D": "在 us-east-1 创建一个 S3 存储桶。配置 S3 跨区域复制（CRR）从 eu-west-1 的 S3 存储桶到 us-east-1 的 S3 存储桶。",
       "E": "修改管道以包括 us-east-1 的 S3 存储桶作为工件存储。为 us-east-1 在管道中创建一个新的 CloudFormation 部署操作。配置新的部署操作以使用来自 us-east-1 输出工件的 CloudFormation 模板。"
     },
-    "best": ["A", "E"],
+    "best": ["C", "E"],
     "analysis": {
-      "A": "这是最佳选项之一，因为它允许通过参数覆盖来动态指定 Lambda 函数代码的位置，从而实现灵活的多区域部署。",
-      "B": "此选项不足以满足需求，因为它没有提供如何处理 Lambda 函数代码位置的细节。",
-      "C": "虽然创建 S3 存储桶是必要的，但仅仅允许 CodePipeline 访问并不足以实现部署到另一个区域的需求。",
-      "D": "此选项涉及跨区域复制，这在此场景中不是必需的，因为已经有了为 us-east-1 生成的输出工件。",
-      "E": "这是最佳选项之一，因为它涉及修改管道以包括新区域的工件存储，并创建新的部署操作，这是实现多区域部署的有效方式。"
+      "A": "修改模板增加参数不是必需的，因为CodeBuild已经为us-east-1生成了单独的构建产物。",
+      "B": "仅创建新的部署动作是不够的，还需要跨区域制品存储。",
+      "C": "在us-east-1创建S3存储桶并配置权限是跨区域部署的必要步骤。",
+      "D": "不需要S3跨区域复制，因为CodeBuild已经生成了专门的us-east-1制品。",
+      "E": "在管道中添加us-east-1的S3制品存储并配置新的部署动作是完整解决方案的关键步骤。"
     },
     "service": [
       "AWS CodePipeline",
@@ -567,7 +565,7 @@
       "AWS CodeBuild",
       "AWS CloudFormation"
     ],
-    "reason": "1.4"
+    "reason": "解析为什么选CE:\n\n1. 关键要求:\n- 需要在eu-west-1的pipeline中部署到us-east-1\n- CodeBuild已更新生成us-east-1的output artifact\n\n2. 为什么选C:\n(a) 跨区域部署需求:\n- 在目标区域(us-east-1)需要S3桶存储制品\n- 需要正确的S3桶权限配置\n\n3. 为什么选E:\n(a) Pipeline配置需求:\n- 需要将us-east-1的S3桶添加为artifact store\n- 需要新建CloudFormation部署action指向us-east-1\n- 使用us-east-1的output artifact\n\n4. 为什么不选其他选项:\nA: 不需要修改模板添加参数\nB: 缺少必要的S3配置\nD: 不需要S3跨区域复制，因为:\n- CodeBuild已配置生成us-east-1的制品\n- 跨区域复制会产生不必要的成本\n\n5. AWS最佳实践:\n- 跨区域部署需要在目标区域配置制品存储\n- 正确配置IAM权限和pipeline action"
   },
   {
     "no": 24,
@@ -579,11 +577,11 @@
       "C": "使用 EC2 自动恢复在发生故障时自动停止并启动实例。当实例重新运行时，使用 S3 事件通知将元数据推送到实例。",
       "D": "使用 AWS CloudFormation 创建一个包含 EC2 资源的 UserData 属性的 EC2 实例。在 UserData 中添加命令以从 Amazon S3 检索应用程序元数据。"
     },
-    "best": ["C"],
+    "best": ["B"],
     "analysis": {
-      "A": "虽然使用 CloudWatch 警报可以监控实例状态并执行恢复操作，但它不提供自动恢复实例的最佳实践。",
-      "B": "AWS OpsWorks 提供了自动修复功能，但它主要用于配置管理，而不是用于处理 EC2 实例的自动恢复。",
-      "C": "EC2 自动恢复确保实例在发生故障时自动恢复，结合 S3 事件通知自动推送元数据到实例，完全符合题目要求。",
+      "A": "CloudWatch告警的recover动作只能处理系统状态检查失败，不能处理所有类型的实例无响应情况，且S3事件通知无法直接推送数据到EC2。",
+      "B": "OpsWorks提供完整的实例健康监控和自动恢复机制，生命周期事件可以确保在实例重启后主动拉取S3元数据，解决方案能够处理各种类型的实例无响应情况",
+      "C": "EC2 Auto Recovery仅限于处理系统状态检查失败，覆盖范围不够全面，且同样存在S3事件通知的问题。",
       "D": "虽然 AWS CloudFormation 可以创建具有自动元数据检索的实例，但它不处理实例的自动恢复。"
     },
     "service": [
@@ -594,7 +592,7 @@
       "EC2 Auto Recovery",
       "AWS CloudFormation"
     ],
-    "reason": "3.3"
+    "reason": "为什么选择B是正确答案:\n\n1. 关键需求分析:\n- EC2实例必须在无响应时自动重启/重新启动\n- 必须在重启后检索S3中的应用程序元数据\n- 解决方案必须能处理实例无响应状态\n\n2. B(AWS OpsWorks)正确的原因:\n- 自动修复功能可以检测和响应:\n * 系统级故障\n * 实例级故障(无响应)\n- 生命周期事件提供内置机制来拉取S3元数据\n- Configure生命周期事件确保实例恢复后检索元数据\n\n3. 其他选项错误的原因:\n\nA. CloudWatch告警与恢复操作:\n- 仅处理系统状态检查失败\n- S3事件通知无法直接推送到EC2\n- 没有可靠的元数据检索触发机制\n\nC. EC2自动恢复:\n- 仅限于系统状态检查失败\n- 与A有相同的S3事件通知限制\n- 不能处理所有类型的无响应情况\n\nD. CloudFormation与UserData:\n- UserData仅在首次启动时运行\n- 没有自动重启/恢复机制\n- 不提供持续监控\n\n关键区别在于OpsWorks同时提供了全面的实例监控/恢复功能和通过生命周期事件检索S3元数据的适当机制。"
   },
   {
     "no": 25,
@@ -644,7 +642,7 @@
       "Amazon CloudWatch Logs",
       "Amazon S3"
     ],
-    "reason": "4.1"
+    "reason": "选择A是正确答案，原因如下：\n\n1. 需求关键点：\n- EKS组件的日志记录\n- 自动化邮件通知\n- 针对特定活动发送通知\n- 使用Lambda处理和SNS发送通知\n\n2. 选项A的优势：\n- CloudWatch Logs原生支持EKS日志收集\n- 订阅过滤器(Subscription Filter)可以实时过滤和转发日志\n- Lambda可以作为订阅目标处理日志\n- 完整工作流：日志收集 → 过滤 → 处理 → 通知\n\n3. 其他选项的问题：\n\nB：\n- CloudWatch Logs Insights主要用于日志分析\n- 与EventBridge结合使用较为复杂且成本高\n\nC和D：\n- EKS不支持直接将日志发送到S3\n- S3日志记录主要用于S3操作审计\n- 不适合实时日志处理场景\n\n4. 技术实现要点：\n- 启用CloudWatch Logs收集EKS日志\n- 为每个组件配置订阅过滤器\n- Lambda函数处理过滤后的日志\n- 根据日志内容发送到相应SNS主题"
   },
   {
     "no": 28,
@@ -673,7 +671,7 @@
       "Amazon S3",
       "Amazon EventBridge"
     ],
-    "reason": "4.1"
+    "reason": "选择D是正确答案，原因如下：\n\n1. 问题关键点：\n- 需要在EC2实例终止前收集日志\n- 需要自动化收集过程\n- 实例是Auto Scaling组的一部分\n\n2. 方案D的优势：\n- 使用Auto Scaling生命周期钩子(Terminating:Wait状态)暂停实例终止\n- EventBridge是处理AWS服务事件的最佳选择\n- Lambda + SSM Run Command是执行自动化任务的理想组合\n- 完整的工作流：触发 → 执行 → 存储 → 完成生命周期\n\n3. 其他选项的问题：\n\nA：\n- CloudWatch告警不适合触发复杂工作流\n- 使用Pending:Wait状态不合适\n\nB：\n- AWS Config规则不能直接触发脚本执行\n- AWS Config更适合合规性检查而非操作自动化\n\nC：\n- CloudWatch订阅过滤器主要用于日志流处理\n- CloudWatch代理不能在实例终止后收集日志\n\n4. 最佳实践要点：\n- 使用Terminating:Wait确保有足够时间收集日志\n- EventBridge提供可靠的事件触发机制\n- SSM Run Command提供安全的命令执行方式\n- S3提供持久化存储"
   },
   {
     "no": 27,
@@ -685,11 +683,11 @@
       "C": "使用 AWS CodeArtifact 存储应用程序代码。使用 AWS CodeDeploy 将应用程序部署到 Amazon EC2 实例群。使用弹性负载均衡来分配流量到 EC2 实例。在进行更改时，上传新版本到 CodeArtifact 并创建新的 CodeDeploy 部署。",
       "D": "使用 AWS Elastic Beanstalk 托管应用程序。在 Amazon S3 中存储应用程序的压缩版本。使用该位置部署应用程序的新版本。使用 Elastic Beanstalk 管理部署选项。"
     },
-    "best": ["C"],
+    "best": ["D"],
     "analysis": {
       "A": "虽然使用了自动扩展和弹性负载均衡，但这种方法涉及手动创建 AMI 和刷新 EC2 实例，这可能不是最高效的蓝/绿部署方法。",
       "B": "Amazon Lightsail 是一个简化的部署和管理选项，但它不支持复杂的蓝/绿部署和 A/B 测试策略。",
-      "C": "使用 AWS CodeArtifact 和 AWS CodeDeploy 可以有效地管理代码存储和自动化部署，支持蓝/绿部署和 A/B 测试，是最佳选择。",
+      "C": "虽然 CodeDeploy 支持部署，但需要更多配置，并且CodeArtifact主要用于包管理，而不是应用程序部署，实现较为复杂",
       "D": "虽然 Elastic Beanstalk 支持多种部署策略，但它的控制和灵活性可能不如直接使用 CodeDeploy 和 CodeArtifact。"
     },
     "service": [
@@ -698,7 +696,7 @@
       "Amazon EC2",
       "Elastic Load Balancing"
     ],
-    "reason": "1.4"
+    "reason": "选择D(AWS Elastic Beanstalk)是正确答案，原因如下：\n\n1. 关键需求：\n- Go语言应用程序迁移到AWS\n- 支持蓝绿部署\n- 支持A/B测试\n\n2. 为什么Elastic Beanstalk最适合：\n- 原生支持Go语言应用\n- 内置蓝绿部署功能\n- 简单的版本管理和部署流程\n- 可通过S3存储和管理应用版本\n- 提供完整的部署选项控制\n- 自动处理底层基础设施\n\n3. 其他选项的不足：\n\nA (EC2 + AMI)：\n- 需要手动管理基础设施\n- 蓝绿部署实现复杂\n- AMI创建和管理开销大\n\nB (Lightsail)：\n- 不支持原生蓝绿部署\n- 功能较为基础，不适合复杂部署策略\n\nC (CodeArtifact + CodeDeploy)：\n- 配置复杂度高\n- CodeArtifact主要用于包管理，不是最佳选择\n\n4. Elastic Beanstalk优势：\n- 开箱即用的部署功能\n- 简化的管理界面\n- 灵活的部署策略\n- 成熟的版本控制"
   },
   {
     "no": 26,
@@ -713,12 +711,12 @@
     "best": ["A"],
     "analysis": {
       "A": "这是最佳选项，因为它使用 SCP 在组织级别实施安全控制，确保只有受信任的管理员 IAM 角色可以修改审计应用程序的 IAM 角色。",
-      "B": "这个选项不是最佳的，因为它需要在每个账户中单独设置 SCP，这在管理上不如选项 A 高效。",
+      "B": "这个选项不是最佳的，因为SCP不能附加到单个服务上",
       "C": "这个选项不是最佳的，因为它使用权限边界而不是 SCP，权限边界主要用于限制 IAM 角色的权限，而不是管理跨账户的访问控制。",
       "D": "这个选项不是最佳的，因为它错误地将权限边界附加到 IAM 角色，而不是使用 SCP 控制组织级别的策略。"
     },
     "service": ["AWS Organizations", "IAM", "SCP"],
-    "reason": "6.1"
+    "reason": "选择A是正确答案，原因如下：\n\n1. 问题关键点：\n- 需要防止除信任管理员外的任何实体修改审计应用的IAM角色\n- 所有账户都在同一个AWS Organizations中\n- 需要一个组织级别的控制机制\n\n2. 为什么A是正确答案：\n- SCP (Service Control Policies) 是组织级别权限控制的最佳方式\n- 可以在组织根级别应用，影响所有成员账户\n- Deny语句配合条件允许特定管理员角色是有效的实现方式\n- 单一策略即可管理所有账户，便于维护\n\n3. 为什么其他选项错误：\n\nB：\n- SCP不支持直接指定IAM principal\n- SCP不能附加到单个服务上\n\nC和D：\n- 权限边界(Permission Boundary)设计用于限制单个IAM实体\n- 需要在每个账户中分别配置，管理成本高\n- 不适合用于组织级别的权限控制\n\n4. SCP的优势：\n- 集中管理\n- 强制执行\n- 适用于组织内所有成员账户\n- 维护成本低"
   },
   {
     "no": 33,
@@ -746,27 +744,27 @@
   },
   {
     "no": 29,
-    "question": "一家公司在 AWS Organizations 中有一个组织。该组织包括包含企业应用程序的工作负载账户。该公司从一个运营账户集中管理用户。工作负载账户中不能创建用户。该公司最近增加了一个运营团队，并且必须为运营团队成员提供对每个工作负载账户的管理员访问权限。哪种操作组合将提供此访问权限？（选择三项。）",
+    "question": "一家公司在 AWS Organizations 中有一个组织。该组织包括包含企业应用程序的工作负载账户。该公司从一个运维账户集中管理用户。工作负载账户中不能创建用户。该公司最近增加了一个运维团队，并且必须为运维团队成员提供对每个工作负载账户的管理员访问权限。哪种操作组合将提供此访问权限？（选择三项。）",
     "choose": 3,
     "options": {
-      "A": "在运营账户中创建一个 SysAdmin 角色。将 AdministratorAccess 策略附加到该角色。修改信任关系以允许来自工作负载账户的 sts:AssumeRole 操作。",
-      "B": "在每个工作负载账户中创建一个 SysAdmin 角色。将 AdministratorAccess 策略附加到该角色。修改信任关系以允许来自运营账户的 sts:AssumeRole 操作。",
-      "C": "在运营账户中创建一个 Amazon Cognito 身份池。将 SysAdmin 角色作为认证角色附加。",
-      "D": "在运营账户中为每个运营团队成员创建一个 IAM 用户。",
-      "E": "在运营账户中创建一个名为 SysAdmins 的 IAM 用户组。添加一个 IAM 策略，允许对每个工作负载账户中的 SysAdmin 角色执行 sts:AssumeRole 操作。将所有运营团队成员添加到该组。",
-      "F": "在运营账户中创建一个 Amazon Cognito 用户池。为每个运营团队成员创建一个 Amazon Cognito 用户。"
+      "A": "在运维账户中创建一个 SysAdmin 角色。将 AdministratorAccess 策略附加到该角色。修改信任关系以允许来自工作负载账户的 sts:AssumeRole 操作。",
+      "B": "在每个工作负载账户中创建一个 SysAdmin 角色。将 AdministratorAccess 策略附加到该角色。修改信任关系以允许来自运维账户的 sts:AssumeRole 操作。",
+      "C": "在运维账户中创建一个 Amazon Cognito 身份池。将 SysAdmin 角色作为认证角色附加。",
+      "D": "在运维账户中为每个运维团队成员创建一个 IAM 用户。",
+      "E": "在运维账户中创建一个名为 SysAdmins 的 IAM 用户组。添加一个 IAM 策略，允许对每个工作负载账户中的 SysAdmin 角色执行 sts:AssumeRole 操作。将所有运维团队成员添加到该组。",
+      "F": "在运维账户中创建一个 Amazon Cognito 用户池。为每个运维团队成员创建一个 Amazon Cognito 用户。"
     },
-    "best": ["B", "E", "F"],
+    "best": ["B", "D", "E"],
     "analysis": {
-      "A": "这个选项不正确，因为信任关系应该允许来自运营账户的 sts:AssumeRole 操作，而不是来自工作负载账户。",
-      "B": "这个选项是正确的，因为它允许运营账户的成员通过 sts:AssumeRole 操作来扮演工作负载账户中的 SysAdmin 角色。",
-      "C": "这个选项不正确，因为 Amazon Cognito 身份池主要用于客户端应用程序的身份管理，而不适用于管理 AWS 资源的访问。",
-      "D": "这个选项不正确，因为题目要求不能在工作负载账户中创建用户，而应该使用角色和策略来管理访问权限。",
-      "E": "这个选项是正确的，因为它通过创建一个用户组并授予该组成员权限来扮演工作负载账户中的 SysAdmin 角色，从而实现了集中管理和访问控制。",
-      "F": "这个选项不正确，因为 Amazon Cognito 用户池用于管理应用程序用户的身份，而不是用于管理 AWS 资源的访问。"
+      "A": "在运维账户创建SysAdmin角色的方案是错误的，因为角色和信任关系的设置方向完全相反，这违背了跨账户访问的基本原则，角色应该设置在被访问的账户中而不是发起访问的账户中。",
+      "B": "在工作负载账户创建SysAdmin角色是正确的设计，它为运维账户的用户提供了一个可以承担的目标角色，并通过信任关系确保只有运维账户的用户才能使用这个具有管理员权限的角色。",
+      "C": "使用Cognito身份池的方案完全偏离了需求，Cognito是用来管理应用程序用户的服务，与AWS账户间的权限管理无关，不能解决跨账户管理访问的问题。",
+      "D": "在运维账户创建IAM用户是必要的步骤，这符合集中式用户管理的要求，为运维团队成员提供了基本的身份，这些用户将用来承担工作负载账户中的角色。",
+      "E": "在运维账户创建用户组并配置权限是最佳实践的体现，通过组统一管理assume role权限，既方便管理又符合权限最小化原则，便于日后的权限变更和用户管理。",
+      "F": "使用Cognito用户池与需求不符，这是针对应用程序用户认证的服务，不能用于AWS账户间的权限管理，完全不适合企业级的IAM管理需求。"
     },
     "service": ["AWS Organizations", "IAM", "Amazon Cognito", "sts:AssumeRole"],
-    "reason": "2.2"
+    "reason": "正确答案是BDE，原因分析如下：\n\n1. 关键需求：\n- 从运维账号集中管理用户\n- 工作负载账号不能创建用户\n- 运维团队需要管理员访问权限\n- 跨账号访问设置\n\n2. 正确选项解释：\n\nB. 在工作负载账号创建SysAdmin角色\n- 必要步骤，为跨账号访问创建目标角色\n- 附加AdministratorAccess策略提供管理员权限\n- 信任关系允许运维账号assumeRole\n\nD. 在运维账号创建IAM用户\n- 为每个运维团队成员创建身份\n- 符合集中用户管理要求\n\nE. 在运维账号创建用户组和策略\n- 通过组统一管理权限\n- 允许assumeRole到工作负载账号\n\n3. 错误选项分析：\n\nA. 在运维账号创建角色错误\n- 角色应该在工作负载账号创建\n- 信任关系方向相反\n\nC和F. Cognito相关选项\n- Cognito用于应用程序身份管理\n- 不适合IAM跨账号访问场景\n\n4. 完整解决方案：\n- 工作负载账号创建可被assume的管理员角色\n- 运维账号创建IAM用户\n- 通过用户组管理assumeRole权限"
   },
   {
     "no": 36,
@@ -780,17 +778,17 @@
       "E": "在源存储桶中创建复制规则以启用复制",
       "F": "在目标存储桶中创建复制规则以启用复制"
     },
-    "best": ["A", "C", "E"],
+    "best": ["A", "D", "E"],
     "analysis": {
       "A": "创建复制 IAM 角色是必要的，因为它将授权源账户访问目标存储桶进行对象复制。",
-      "B": "在目标账户中创建复制 IAM 角色不是必要的，因为复制过程是由源账户控制的。",
-      "C": "向源存储桶策略添加声明是必要的，以允许复制 IAM 角色执行复制操作。",
-      "D": "向目标存储桶策略添加声明不是必要的，因为复制权限应由源存储桶的策略控制。",
-      "E": "在源存储桶中创建复制规则是必要的，以定义复制的目标和条件。",
-      "F": "在目标存储桶中创建复制规则不是必要的，因为复制规则应仅在源存储桶中设置。"
+      "B": "复制操作是从源账户发起的，不需要在目标账户创建角色,只需在目标桶策略中授予源账户的角色适当的权限",
+      "C": "源桶的复制角色权限通过IAM角色策略管理，而不是通过桶策略，不需要在源桶策略中额外添加权限",
+      "D": "由于目标桶在不同账户中，需要显式允许源账户的复制角色访问,目标桶策略需要授予源账户的IAM角色写入权限,这是跨账户访问所必需的安全设置",
+      "E": "复制规则定义了具体的复制配置，包括目标桶、要复制的对象等,规则必须在源桶配置，因为复制是从源发起的,可以在规则中指定要使用的IAM角色",
+      "F": "复制规则只需要在源桶配置,目标桶只需要配置适当的权限策略即可"
     },
     "service": ["Amazon S3", "IAM"],
-    "reason": "3.3"
+    "reason": "选择ADE是正确答案，分析如下：\n\n1. 跨区域复制(CRR)的关键要求：\n- 跨区域复制S3对象\n- 跨账户复制\n- 源bucket是私有的\n\n2. 正确选项分析：\n\nA. 在源账户创建复制IAM角色\n- 必需的，用于授权S3执行复制操作\n- 角色需要有源bucket的读取权限\n\nD. 在目标bucket策略中添加允许复制的语句\n- 必需的，允许源账户的IAM角色写入目标bucket\n- 跨账户访问需要显式授权\n\nE. 在源bucket创建复制规则\n- 必需的，定义复制配置\n- 指定目标bucket和复制参数\n\n3. 错误选项分析：\n\nB. 在目标账户创建复制IAM角色\n- 不需要，复制由源账户发起\n\nC. 在源bucket策略添加复制语句\n- 不需要，IAM角色已提供权限\n\nF. 在目标bucket创建复制规则\n- 不正确，复制规则只在源bucket配置\n\n4. 实施步骤：\n- 确保两个bucket都启用了版本控制\n- 创建源账户IAM角色\n- 配置目标bucket策略\n- 在源bucket创建复制规则"
   },
   {
     "no": 30,
@@ -841,7 +839,7 @@
       "Amazon EventBridge",
       "AWS Lambda"
     ],
-    "reason": "2.3"
+    "reason": "选择A是正确答案，分析如下：\n\n1. 问题核心：\n- Storage Gateway使用文件网关模式\n- 第三方直接向S3写入数据\n- 文件网关缓存未及时更新\n- 用户无法看到最新数据\n\n2. 选项A的优势：\n- 使用EventBridge定时触发Lambda\n- RefreshCache命令可强制更新缓存\n- 自动化解决方案\n- 符合AWS最佳实践\n\n3. 其他选项的问题：\n\nB：\n- 使用SFTP上传仍然是直接写入S3\n- 不解决缓存更新问题\n\nC：\n- 改变网关模式不是解决方案\n- 卷网关模式用途不同\n\nD：\n- S3复制不适用于此场景\n- Storage Gateway不是S3的复制目标\n\n4. 技术实现：\n- 配置EventBridge定时规则\n- Lambda函数调用RefreshCache API\n- 在业务开始前执行\n- 确保缓存与S3同步"
   },
   {
     "no": 32,
@@ -898,7 +896,7 @@
       "AWS CodeBuild",
       "AWS Lambda"
     ],
-    "reason": "1.4"
+    "reason": "选择C是正确答案，原因分析如下：\n\n1. 关键需求：\n- 在蓝绿部署中测试绿色版本\n- 测试脚本执行时间不超过5分钟\n- 发现错误时需要回滚\n- 在转移流量前进行测试\n\n2. 选项C的优点：\n- 使用CodeDeploy AppSpec文件的hooks部分\n- AfterAllowTestTraffic生命周期事件恰好适合测试场景\n- 通过Lambda执行测试脚本\n- Lambda函数返回错误可自动触发回滚\n- 符合蓝绿部署的最佳实践\n\n3. 其他选项的问题：\n\nA和B：\n- 在部署阶段之前执行测试\n- 测试时机不合适\n- stop-deployment命令只是停止部署，不会自动回滚\n\nD：\n- AfterAllowTraffic事件发生在流量已经转移之后\n- 使用CLI命令stop-deployment不会触发自动回滚\n\n4. 最佳实践：\n- 在AppSpec文件中配置hooks\n- 使用AfterAllowTestTraffic事件\n- 通过Lambda执行测试\n- 利用Lambda错误退出自动触发回滚"
   },
   {
     "no": 39,
@@ -1267,12 +1265,12 @@
       "C": "创建一个 Amazon EventBridge 规则，该规则对 pullRequestCreated 和 pullRequestSourceBranchUpdated 事件做出反应。创建一个 AWS Lambda 函数，该函数调用一个带有 CodeBuild 动作的 CodePipeline 管道来运行应用程序的测试。编程 Lambda 函数在拉取请求上发布 CodeBuild 徽章作为评论，以便开发人员在代码审查中看到徽章。",
       "D": "创建一个 Amazon EventBridge 规则，该规则对 pullRequestStatusChanged 事件做出反应。创建一个 AWS Lambda 函数，该函数调用一个带有 CodeBuild 动作的 CodePipeline 管道来运行应用程序的测试。编程 Lambda 函数在测试结果完成时在拉取请求上发布 CodeBuild 测试结果作为评论。"
     },
-    "best": ["B"],
+    "best": ["C"],
     "analysis": {
-      "A": "此选项不是最佳选择，因为它仅在 pullRequestStatusChanged 事件发生时触发，这可能不会涵盖所有必要的测试场景。",
-      "B": "此选项是最佳选择，因为它在创建拉取请求时立即触发测试，并在测试完成后将结果作为评论发布，这确保了测试的及时性和可见性。",
-      "C": "此选项不是最佳选择，尽管它覆盖了创建和更新源分支的事件，但仅发布徽章而不是详细的测试结果，可能不足以提供足够的信息。",
-      "D": "此选项不是最佳选择，因为它仅在 pullRequestStatusChanged 事件发生时触发，这可能不会涵盖所有必要的测试场景。"
+      "A": "这个事件只在PR状态改变时触发(如开启/关闭PR)，不适合用于代码测试",
+      "B": "如果PR源分支更新，无法触发新的测试",
+      "C": "同时监听pullRequestCreated和pullRequestSourceBranchUpdated事件，优点：在PR创建时运行测试，当PR源分支更新时重新运行测试，确保代码变更都经过测试，使用CodeBuild badge显示结果",
+      "D": "与A选项类似的问题,并且虽然提供详细测试结果，但触发时机不对"
     },
     "service": [
       "AWS CodeCommit",
@@ -1282,7 +1280,7 @@
       "Amazon EventBridge",
       "AWS Lambda"
     ],
-    "reason": "1.2"
+    "reason": "重要事件说明：\n\npullRequestCreated：新建PR时触发\npullRequestSourceBranchUpdated：PR源分支更新时触发\npullRequestStatusChanged：PR状态变化时触发（如开启/关闭）"
   },
   {
     "no": 50,
@@ -1415,9 +1413,9 @@
     "best": ["A", "E"],
     "analysis": {
       "A": "这是最佳选项之一，因为它允许 QA 团队在生产部署之前手动审查和批准构件。",
-      "B": "这不是最佳选项，因为它涉及到修改构建规范，可能会影响构建过程的自动化和效率。",
-      "C": "这不是最佳选项，因为虽然它提供了审批机制，但不涉及到 QA 团队对构件的检查或渗透测试。",
-      "D": "这不是最佳选项，因为直接调用 API 可能会绕过 QA 团队的审查过程。",
+      "B": "这不是最佳选项，因为buildspec.yml不支持手动审批功能，这是构建配置文件，不适合添加审批流程",
+      "C": "这不是最佳选项，CodeDeploy部署组不支持手动审批，这是部署配置，不适合添加审批流程",
+      "D": "这不是最佳选项，因为CodePipeline没有直接调用REST API的能力",
       "E": "这是最佳选项之一，因为它通过 Lambda 函数提供了一个灵活的方式来调用渗透测试工具，同时保持了管道的自动化和控制。"
     },
     "service": [
@@ -1452,7 +1450,7 @@
       "Amazon Route 53",
       "Application Load Balancer"
     ],
-    "reason": "1.4"
+    "reason": ""
   },
   {
     "no": 60,
@@ -1499,7 +1497,7 @@
       "D": "这个选项创建了一个服务角色并仅授予开发者角色 iam:PassRole 权限，这允许开发者仅将服务角色传递给 CloudFormation，符合最小权限原则。"
     },
     "service": ["AWS CloudFormation", "IAM"],
-    "reason": "2.1"
+    "reason": "选择 D 是因为它提供了最符合最小权限原则的解决方案：1) 创建一个服务角色，该角色仅具有部署特定资源所需的权限 2) 开发人员角色只被授予 iam:PassRole 权限，使其能够将服务角色传递给 CloudFormation 3) 开发人员不直接获得任何额外的资源访问权限 4) CloudFormation 使用服务角色来执行实际的资源创建操作。这种方式既确保了开发人员能够部署堆栈，又最大限度地减少了权限范围。"
   },
   {
     "no": 62,
@@ -1523,33 +1521,32 @@
   },
   {
     "no": 58,
-    "question": "一家公司在 Amazon EC2 实例上运行一个应用程序。该公司使用一系列 AWS CloudFormation 堆栈来定义应用程序资源。开发人员通过在笔记本电脑上构建和测试应用程序，然后将构建输出和 CloudFormation 堆栈模板上传到 Amazon S3 来执行更新。开发人员的同事在开发人员执行 CloudFormation 堆栈更新并将新版本的应用程序安装到 EC2 实例上之前审查更改。部署过程容易出错，当开发人员更新每个 EC2 实例上的新应用程序时，耗时较长。公司希望尽可能自动化应用程序部署过程，同时保留在修改应用程序或资源之前的最终手动审批步骤。公司已将应用程序的源代码和 CloudFormation 模板移至 AWS CodeCommit。公司还创建了一个 AWS CodeBuild 项目来构建和测试应用程序。哪两个步骤的组合将满足公司的要求？（选择两项。）",
+    "question": "一家公司在 Amazon EC2 实例上运行应用程序。该公司使用一系列 AWS CloudFormation 堆栈来定义应用程序资源。开发人员通过在笔记本电脑上构建和测试应用程序，然后将构建输出和 CloudFormation 堆栈模板上传到 Amazon S3 来执行更新。开发人员的同事在开发人员执行 CloudFormation 堆栈更新并在 EC2 实例上安装新版本的应用程序之前审查更改。当开发人员使用新应用程序更新每个 EC2 实例时，部署过程容易出错且耗时。该公司希望尽可能自动化应用程序部署过程，同时在修改应用程序或资源之前保留最终手动审批步骤。该公司已将应用程序的源代码和 CloudFormation 模板移至 AWS CodeCommit。该公司还创建了一个 AWS CodeBuild 项目来构建和测试应用程序。",
     "choose": 2,
     "options": {
       "A": "在 AWS CodeDeploy 中创建应用程序组和部署组。在 EC2 实例上安装 CodeDeploy 代理。",
-      "B": "在 AWS CodeDeploy 中创建应用程序修订版和部署组。在 CodeDeploy 中创建环境。将 EC2 实例注册到 CodeDeploy 环境。",
-      "C": "使用 AWS CodePipeline 调用 CodeBuild 作业，运行 CloudFormation 更新，并暂停以进行手动审批步骤。审批后，启动 AWS CodeDeploy 部署。",
-      "D": "使用 AWS CodePipeline 调用 CodeBuild 作业，为每个应用程序堆栈创建 CloudFormation 更改集，并暂停以进行手动审批步骤。审批后，运行 CloudFormation 更改集并启动 AWS CodeDeploy 部署。",
-      "E": "使用 AWS CodePipeline 调用 CodeBuild 作业，为每个应用程序堆栈创建 CloudFormation 更改集，并暂停以进行手动审批步骤。审批后，启动 AWS CodeDeploy 部署。"
+      "B": "在 AWS CodeDeploy 中创建应用程序修订和部署组。在 CodeDeploy 中创建环境。将 EC2 实例注册到 CodeDeploy 环境。",
+      "C": "使用 AWS CodePipeline 调用 CodeBuild 作业，运行 CloudFormation 更新，并暂停以等待手动审批步骤。批准后，启动 AWS CodeDeploy 部署。",
+      "D": "使用 AWS CodePipeline 调用 CodeBuild 作业，为每个应用程序堆栈创建 CloudFormation 变更集，并暂停以等待手动审批步骤。批准后，运行 CloudFormation 变更集并启动 AWS CodeDeploy 部署。",
+      "E": "使用 AWS CodePipeline 调用 CodeBuild 作业，为每个应用程序堆栈创建 CloudFormation 变更集，并暂停以等待手动审批步骤。批准后，启动 AWS CodeDeploy 部署。"
     },
-    "best": ["D", "E"],
+    "best": ["A", "D"],
     "analysis": {
-      "A": "此选项提供了在 CodeDeploy 中创建应用程序组和部署组的步骤，以及在 EC2 实例上安装 CodeDeploy 代理的步骤。虽然这是自动化部署的一部分，但它没有涵盖使用 CodePipeline 来集成和自动化整个流程。",
-      "B": "此选项提到了在 CodeDeploy 中创建环境并注册 EC2 实例，但这不是 AWS CodeDeploy 的标准用法，因此可能会引起混淆。",
-      "C": "此选项包括使用 CodePipeline 调用 CodeBuild 和运行 CloudFormation 更新，但没有提到创建 CloudFormation 更改集，这是最佳实践，以确保更新可以在执行前进行审查。",
-      "D": "此选项完整地描述了使用 CodePipeline 来自动化构建、审批和部署过程，包括创建 CloudFormation 更改集和在审批后执行这些更改集以及启动 CodeDeploy 部署的步骤。",
-      "E": "此选项与选项 D 类似，但在审批后直接启动 CodeDeploy 部署，没有明确执行更改集。这可能是一个更简化的流程，但在某些情况下可能需要执行更改集以确保更精确的控制。"
+      "A": "正确。要使用 CodeDeploy 进行部署，必须在 EC2 实例上安装 CodeDeploy 代理。",
+      "B": "错误。CodeDeploy 没有'环境'的概念，且不需要手动注册 EC2 实例（使用标签过滤）。",
+      "C": "错误。审批步骤后直接运行 CloudFormation 更新，没有使用变更集进行审查，流程不完整。",
+      "D": "正确。完整的部署流程：调用 CodeBuild、创建变更集、手动审批、执行变更集、启动 CodeDeploy 部署。",
+      "E": "错误。缺少执行 CloudFormation 变更集的步骤，流程不完整。"
     },
     "service": [
-      "AWS CodeCommit",
-      "AWS CodeBuild",
       "AWS CodeDeploy",
+      "AWS CodeBuild",
       "AWS CodePipeline",
-      "Amazon S3",
+      "AWS CloudFormation",
       "Amazon EC2",
-      "AWS CloudFormation"
+      "Amazon S3"
     ],
-    "reason": "1.1"
+    "reason": "选择 A 和 D 是因为它们共同提供了一个完整的自动化部署解决方案：A 确保了 CodeDeploy 可以在 EC2 实例上执行部署，D 提供了完整的部署流水线，包括构建、变更集审查、手动审批和部署步骤。这个组合满足了公司自动化部署同时保留手动审批的要求。"
   },
   {
     "no": 55,
@@ -1879,7 +1876,7 @@
       "C": "所有管道中的所有事件",
       "D": "所有管道中的审批操作"
     },
-    "best": ["A"],
+    "best": ["B"],
     "analysis": {
       "A": "这是最优选项，因为事件模式指定了对失败的状态进行匹配，这通常涉及部署和构建操作的失败。",
       "B": "这不是最优选项，因为事件模式没有特别指出审批操作，而是更广泛地关注于执行状态的失败。",
@@ -2583,12 +2580,12 @@
       "C": "将所有账户置于组织内的一个新的顶级 OU 下。创建一个 SCP 以拒绝访问受限制的 AWS 服务。将 SCP 附加到 OU。",
       "D": "创建一个仅允许访问批准的 AWS 服务的 SCP。将 SCP 附加到组织的根 OU。从组织的根 OU 中移除 FullAWSAccess SCP。"
     },
-    "best": ["C"],
+    "best": ["D"],
     "analysis": {
       "A": "不正确。使用CloudFormation StackSets和IAM策略在每个账户中管理访问权限不是最佳方案，因为这种方法难以维护且容易被账户管理员修改或删除。",
       "B": "不正确。虽然AWS Control Tower提供了良好的账户治理，但使用IAM Identity Center的拒绝策略不是实施服务访问限制的最佳方式，因为它仍可能被账户管理员绕过。",
-      "C": "正确。使用SCP限制服务访问是最佳实践，因为：它在组织级别实施，不能被成员账户绕过；易于管理和更新；不影响账户的管理权限；可以统一应用于所有账户。",
-      "D": "不正确。在根OU附加允许列表SCP并移除FullAWSAccess过于严格，可能导致意外的服务中断。使用拒绝列表更灵活且安全。"
+      "C": "不正确。使用拒绝列表意味着默认情况下团队可以访问任何新服务（黑名单方式），直到被明确拒绝，这与服务必须先获得批准才能使用的要求不符",
+      "D": "创建一个只允许访问已批准服务的 SCP（白名单方式）确保团队只能使用公司批准的服务，将 SCP 附加到组织的根 OU 并移除 FullAWSAccess SCP 确保策略在整个组织范围内生效，团队在已批准服务的范围内仍然保留管理权限，这与审批流程相符，因为新服务可以在获得批准后添加到允许列表中"
     },
     "service": [
       "AWS Organizations",
@@ -2598,7 +2595,7 @@
       "AWS IAM Identity Center",
       "Service Control Policies (SCP)"
     ],
-    "reason": "选择C是最佳解决方案，因为：将所有账户放在新的顶级OU下并使用SCP实施服务限制提供了最佳的平衡；SCP可以有效限制未经批准服务的访问，同时不影响团队对其账户的管理权限；这种方法易于维护，只需更新SCP即可添加或删除限制的服务；它确保了强制执行，因为SCP不能被成员账户覆盖或修改；符合AWS最佳实践的权限管理方式；提供了清晰的组织结构和访问控制层次。"
+    "reason": "每个团队必须保留对其 AWS 账户的完全管理权限，每个团队只能访问公司批准的 AWS 服务，AWS 服务必须通过申请和批准流程"
   },
   {
     "no": 108,
@@ -2663,12 +2660,12 @@
   },
   {
     "no": 103,
-    "question": "一家公司的 DevOps 工程师在多账户环境中工作。该公司使用 AWS Transit Gateway 将所有出站流量通过网络运营账户路由。在网络运营账户中，所有账户流量在流向互联网网关之前都会通过防火墙设备进行检查。防火墙设备将日志发送到 Amazon CloudWatch Logs，并包括 CRITICAL、HIGH、MEDIUM、LOW 和 INFO 的事件严重性。安全团队希望在发生任何 CRITICAL 事件时收到警报。DevOps 工程师应该做什么来满足这些要求？",
+    "question": "一家公司的 DevOps 工程师在多账户环境中工作。该公司使用 AWS Transit Gateway 将所有出站流量通过网络运维账户路由。在网络运维账户中，所有账户流量在流向互联网网关之前都会通过防火墙设备进行检查。防火墙设备将日志发送到 Amazon CloudWatch Logs，并包括 CRITICAL、HIGH、MEDIUM、LOW 和 INFO 的事件严重性。安全团队希望在发生任何 CRITICAL 事件时收到警报。DevOps 工程师应该做什么来满足这些要求？",
     "choose": 1,
     "options": {
       "A": "创建一个 Amazon CloudWatch Synthetics canary 来监控防火墙状态。如果防火墙达到 CRITICAL 状态或记录 CRITICAL 事件，使用 CloudWatch 警报发布通知到 Amazon Simple Notification Service (Amazon SNS) 主题。订阅安全团队的电子邮件地址到该主题。",
       "B": "使用搜索 CRITICAL 事件的 Amazon CloudWatch 指标过滤器创建一个。发布一个自定义指标以进行查找。使用基于自定义指标的 CloudWatch 警报发布通知到 Amazon Simple Notification Service (Amazon SNS) 主题。订阅安全团队的电子邮件地址到该主题。",
-      "C": "在网络运营账户中启用 Amazon GuardDuty。配置 GuardDuty 监控流日志。创建一个由 GuardDuty 事件触发的 CRITICAL 的 Amazon EventBridge 事件规则。定义一个 Amazon Simple Notification Service (Amazon SNS) 主题作为目标。订阅安全团队的电子邮件地址到该主题。",
+      "C": "在网络运维账户中启用 Amazon GuardDuty。配置 GuardDuty 监控流日志。创建一个由 GuardDuty 事件触发的 CRITICAL 的 Amazon EventBridge 事件规则。定义一个 Amazon Simple Notification Service (Amazon SNS) 主题作为目标。订阅安全团队的电子邮件地址到该主题。",
       "D": "使用 AWS Firewall Manager 应用跨所有账户的一致策略。创建一个由 Firewall Manager 事件触发的 CRITICAL 的 Amazon EventBridge 事件规则。定义一个 Amazon Simple Notification Service (Amazon SNS) 主题作为目标。订阅安全团队的电子邮件地址到该主题。"
     },
     "best": ["B"],
@@ -2711,7 +2708,7 @@
   },
   {
     "no": 102,
-    "question": "一家公司在 AWS Organizations 中的组织中的 AWS 账户中运行应用程序。这些应用程序使用 Amazon EC2 实例和 Amazon S3。该公司希望检测潜在受损的 EC2 实例、可疑的网络活动和不寻常的 API 活动，无论是在其现有的 AWS 账户中还是在该公司未来创建的任何 AWS 账户中。当公司检测到这些事件之一时，公司希望使用现有的 Amazon Simple Notification Service (Amazon SNS) 主题向其运营支持团队发送通知，以进行调查和补救。哪种解决方案将符合 AWS 最佳实践以满足这些要求？",
+    "question": "一家公司在 AWS Organizations 中的组织中的 AWS 账户中运行应用程序。这些应用程序使用 Amazon EC2 实例和 Amazon S3。该公司希望检测潜在受损的 EC2 实例、可疑的网络活动和不寻常的 API 活动，无论是在其现有的 AWS 账户中还是在该公司未来创建的任何 AWS 账户中。当公司检测到这些事件之一时，公司希望使用现有的 Amazon Simple Notification Service (Amazon SNS) 主题向其运维支持团队发送通知，以进行调查和补救。哪种解决方案将符合 AWS 最佳实践以满足这些要求？",
     "choose": 1,
     "options": {
       "A": "在组织的管理账户中，将一个 AWS 账户配置为 Amazon GuardDuty 管理员账户。在 GuardDuty 管理员账户中，将公司的现有 AWS 账户添加为 GuardDuty 成员。在 GuardDuty 管理员账户中，创建一个 Amazon EventBridge 规则，其事件模式与 GuardDuty 事件匹配，并将匹配的事件转发到 SNS 主题。",
@@ -3435,7 +3432,7 @@
   },
   {
     "no": 135,
-    "question": "一家公司正在审查其灾难恢复能力，并希望能够将其日常运营切换到辅助 AWS 区域。该公司在主要区域使用 AWS CodeCommit 作为源代码控制工具。一名 DevOps 工程师必须为公司提供在辅助区域开发代码的能力。如果公司需要使用辅助区域，开发人员可以在其本地 Git 配置中添加一个额外的远程 URL。哪种解决方案能满足这些要求？",
+    "question": "一家公司正在审查其灾难恢复能力，并希望能够将其日常运维切换到辅助 AWS 区域。该公司在主要区域使用 AWS CodeCommit 作为源代码控制工具。一名 DevOps 工程师必须为公司提供在辅助区域开发代码的能力。如果公司需要使用辅助区域，开发人员可以在其本地 Git 配置中添加一个额外的远程 URL。哪种解决方案能满足这些要求？",
     "choose": 1,
     "options": {
       "A": "在辅助区域创建一个 CodeCommit 仓库。创建一个 AWS CodeBuild 项目来执行主要区域的 CodeCommit 仓库到辅助区域的 CodeCommit 仓库的 Git 镜像操作。创建一个 AWS Lambda 函数来调用 CodeBuild 项目。创建一个 Amazon EventBridge 规则，该规则对主要区域的 CodeCommit 仓库中的合并事件做出反应。配置 EventBridge 规则以调用 Lambda 函数。",
@@ -4190,7 +4187,7 @@
       "E": "部署 Customizations for AWS Control Tower (CfCT) CloudFormation 堆栈。",
       "F": "创建一个包含每个自定义资源的 CloudFormation 模板。"
     },
-    "best": ["B", "D", "E"],
+    "best": ["B", "C", "F"],
     "analysis": {
       "A": "虽然启用受信任的访问对于集成服务很重要，但这一步骤并不直接涉及到通过 AWS Control Tower 提供自定义。",
       "B": "这是最佳选项之一，因为它涉及到创建一个可以由管理账户中的 AWSControlTowerAdmin 角色扮演的 IAM 角色，这对于管理和部署自定义至关重要。",
@@ -4259,7 +4256,7 @@
   },
   {
     "no": 167,
-    "question": "一家公司使用 AWS Organizations 中的组织来管理其 AWS 账户。该公司的自动化账户包含一个 CI/CD 管道，用于创建和配置新的 AWS 账户。该公司有一组内部服务团队，为组织中的账户提供服务。服务团队在一组服务账户中运营。服务团队希望在 CreateAccount API 调用创建新账户时，在其服务账户中接收 AWS CloudTrail 事件。该公司应如何与服务账户共享此 CloudTrail 事件？",
+    "question": "一家公司使用 AWS Organizations 中的组织来管理其 AWS 账户。该公司的自动化账户包含一个 CI/CD 管道，用于创建和配置新的 AWS 账户。该公司有一组内部服务团队，为组织中的账户提供服务。服务团队在一组服务账户中运维。服务团队希望在 CreateAccount API 调用创建新账户时，在其服务账户中接收 AWS CloudTrail 事件。该公司应如何与服务账户共享此 CloudTrail 事件？",
     "choose": 1,
     "options": {
       "A": "在自动化账户中创建一个 Amazon EventBridge 规则，将账户创建事件发送到服务账户中的默认事件总线。更新服务账户中的默认事件总线，允许来自自动化账户的事件。",
@@ -4891,13 +4888,13 @@
   },
   {
     "no": 191,
-    "question": "一家公司使用 AWS WAF 保护其云基础设施。一名 DevOps 工程师需要给运营团队提供分析 AWS WAF 日志消息的能力。运营团队需要能够为日志输出中的特定模式创建警报。哪种解决方案在最小的操作开销下满足这些要求？",
+    "question": "一家公司使用 AWS WAF 保护其云基础设施。一名 DevOps 工程师需要给运维团队提供分析 AWS WAF 日志消息的能力。运维团队需要能够为日志输出中的特定模式创建警报。哪种解决方案在最小的操作开销下满足这些要求？",
     "choose": 1,
     "options": {
-      "A": "创建一个 Amazon CloudWatch Logs 日志组。配置适当的 AWS WAF 网络 ACL 以将日志消息发送到日志组。指导运营团队创建 CloudWatch 指标过滤器。",
+      "A": "创建一个 Amazon CloudWatch Logs 日志组。配置适当的 AWS WAF 网络 ACL 以将日志消息发送到日志组。指导运维团队创建 CloudWatch 指标过滤器。",
       "B": "创建一个 Amazon OpenSearch Service 集群和适当的索引。配置一个 Amazon Kinesis Data Firehose 传输流以将日志数据流式传输到索引。使用 OpenSearch Dashboards 创建过滤器和小部件。",
-      "C": "创建一个 Amazon S3 存储桶用于日志输出。配置 AWS WAF 将日志输出发送到 S3 存储桶。指导运营团队创建 AWS Lambda 函数以检测每个所需的日志消息模式。配置 Lambda 函数以发布到 Amazon Simple Notification Service (Amazon SNS) 主题。",
-      "D": "创建一个 Amazon S3 存储桶用于日志输出。配置 AWS WAF 将日志输出发送到 S3 存储桶。使用 Amazon Athena 创建一个外部表定义以适应日志消息模式。指导运营团队编写 SQL 查询并为 Athena 查询创建 Amazon CloudWatch 指标过滤器。"
+      "C": "创建一个 Amazon S3 存储桶用于日志输出。配置 AWS WAF 将日志输出发送到 S3 存储桶。指导运维团队创建 AWS Lambda 函数以检测每个所需的日志消息模式。配置 Lambda 函数以发布到 Amazon Simple Notification Service (Amazon SNS) 主题。",
+      "D": "创建一个 Amazon S3 存储桶用于日志输出。配置 AWS WAF 将日志输出发送到 S3 存储桶。使用 Amazon Athena 创建一个外部表定义以适应日志消息模式。指导运维团队编写 SQL 查询并为 Athena 查询创建 Amazon CloudWatch 指标过滤器。"
     },
     "best": ["A"],
     "analysis": {
@@ -5502,7 +5499,7 @@
   },
   {
     "no": 218,
-    "question": "一家公司在 AWS Organizations 中的公司组织账户中运营敏感工作负载。该公司使用一个 IP 地址范围来委派 Amazon VPC CIDR 块和所有非云硬件的 IP 地址。公司需要一种解决方案，防止不在公司 IP 地址范围内的主体在组织的账户中执行 AWS 操作。哪种解决方案能满足这些要求？",
+    "question": "一家公司在 AWS Organizations 中的公司组织账户中运维敏感工作负载。该公司使用一个 IP 地址范围来委派 Amazon VPC CIDR 块和所有非云硬件的 IP 地址。公司需要一种解决方案，防止不在公司 IP 地址范围内的主体在组织的账户中执行 AWS 操作。哪种解决方案能满足这些要求？",
     "choose": 1,
     "options": {
       "A": "为组织配置 AWS Firewall Manager。创建一个仅允许来自公司 IP 地址范围的源流量的 AWS Network Firewall 策略。将策略范围设置为组织中的所有账户。",
@@ -5866,7 +5863,7 @@
       "C": "删除失败是因为自定义资源没有定义删除策略。向自定义资源定义中添加 DeletionPolicy 属性，其值为 RemoveOnDeletion。",
       "D": "删除失败是因为 S3 存储桶不为空。修改 CloudFormation 模板中的 S3 存储桶资源，添加 DeletionPolicy 属性，其值为 Empty。"
     },
-    "best": ["D"],
+    "best": ["B"],
     "analysis": {
       "A": "虽然删除网站配置是一个必要步骤，但仅仅移除配置并不能解决存储桶中已有内容导致的删除失败问题。",
       "B": "虽然这种方法可以清空存储桶，但它需要修改 Lambda 函数代码，这可能不是最直接或最简单的解决方案。",
@@ -5948,7 +5945,7 @@
       "E": "在 Amazon CloudWatch Logs 中创建日志组，并将该日志组指定为 EventBridge 规则的额外目标。",
       "F": "更新应用程序代码库，使用 AWS X-Ray SDK 跟踪功能为代码添加支持 X-Amzn-Trace-Id 标头的工具。"
     },
-    "best": ["C", "D", "E"],
+    "best": ["B", "C", "E"],
     "analysis": {
       "A": "AWS Device Farm 主要用于应用程序测试，而不是用于事件查看、排除故障或防止事件丢失。",
       "B": "虽然 CloudTrail 可以用于审计和监控 AWS 账户的活动，但它并不直接帮助查看或排除 EventBridge 事件传递问题。",
@@ -5978,7 +5975,7 @@
       "C": "在每个实例上配置 AWS Systems Manager。使用 Systems Manager Inventory。在 AWS CloudTrail 中过滤 Systems Manager Inventory 事件的轨迹以识别禁止的应用程序。",
       "D": "指定 Amazon CloudWatch Logs 为所有应用程序实例的日志目的地。在所有实例上运行自动化脚本以创建已安装应用程序的清单。配置脚本将结果转发到 CloudWatch Logs。创建一个 CloudWatch 警报，使用过滤模式搜索日志数据以识别禁止的应用程序。"
     },
-    "best": ["A"],
+    "best": ["B"],
     "analysis": {
       "A": "这是最佳选项，因为它使用 AWS Systems Manager 来管理和审计 EC2 实例，同时利用 Lambda 函数自动处理 S3 存储桶中的数据，从而提高操作效率。",
       "B": "此选项不是最佳选择，因为它依赖于 AWS Config 规则来监控更改，这可能不如选项 A 中的自动化 Lambda 函数处理高效。",
@@ -6301,7 +6298,7 @@
       "D": "在开发账户中从CloudFormation模板创建一个开发环境。安排一个Amazon EventBridge规则每周启动一次AWS Step Functions状态机。",
       "E": "在开发账户中从CloudFormation模板创建一个开发环境。安排一个Amazon EC2实例上的cron作业每周运行一次以启动S3批处理操作作业。"
     },
-    "best": ["A", "C"],
+    "best": ["A", "D"],
     "analysis": {
       "A": "这是最佳选项之一，因为它涉及使用Amazon Macie来发现和红色处理PII，然后使用AWS Step Functions来自动化数据的复制和加密/解密过程，确保在不同的环境中使用不同的KMS密钥。",
       "B": "这个选项不是最佳的，因为它在数据复制到开发环境之后才进行PII的处理，这可能导致PII暴露。",
@@ -6454,7 +6451,7 @@
       "D": "配置一个 Amazon EventBridge 规则在映像扫描完成时调用一个 AWS Lambda 函数。配置 Lambda 函数以消费 Amazon Inspector 扫描状态，并向 CI/CD 管道提交批准或拒绝状态。",
       "E": "配置一个 Amazon EventBridge 规则在映像扫描完成时调用一个 AWS Lambda 函数。配置 Lambda 函数以消费 Clair 扫描状态，并向 CI/CD 管道提交批准或拒绝状态。"
     },
-    "best": ["B", "C"],
+    "best": ["B", "D"],
     "analysis": {
       "A": "基本扫描可能不足以检测所有关键和高级别的漏洞。",
       "B": "增强扫描提供了更深入的安全检查，能够识别 CRITICAL 和 HIGH 级别的漏洞。",
@@ -6729,7 +6726,7 @@
       "D": "更新 CodeArtifact 包的原始控制设置以允许直接发布并阻止上游操作。",
       "E": "更新 CodeArtifact 包的原始控制设置以阻止直接发布并允许上游操作。"
     },
-    "best": ["A", "D"],
+    "best": ["C", "D"],
     "analysis": {
       "A": "将包版本状态设置为未列出可以阻止新的客户端下载，但不影响已经下载的客户端，这是一个有效的步骤来阻止进一步的下载。",
       "B": "删除包版本会从仓库中完全移除该版本，这可能不是最佳选择，因为它可能影响到需要回滚到旧版本的情况。",
@@ -6805,7 +6802,7 @@
       "E": "通过使用 Service 维度分析 ContainerInsights 命名空间中的 pod_memory_utilization Amazon CloudWatch 指标。",
       "F": "通过使用 ClusterName 维度分析 ContainerInsights 命名空间中的 node_memory_utilization Amazon CloudWatch 指标。"
     },
-    "best": ["C", "E", "F"],
+    "best": ["A", "C", "E"],
     "analysis": {
       "A": "虽然这个选项确实涉及到 IAM 策略，但它不直接涉及到收集或分析内存指标的能力。",
       "B": "这个选项也是关于 IAM 策略，但它不是直接收集或分析内存指标的最佳方式。",
@@ -6901,7 +6898,7 @@
       "C": "启用Amazon CloudWatch Container Insights。启用AWS CloudTrail日志。将EKS审计日志和CloudTrail日志文件存储在Amazon S3桶中。使用Amazon Athena创建外部表。使用Amazon QuickSight创建仪表板。",
       "D": "启用Amazon GuardDuty用于EKS审计日志监控。启用Amazon CloudWatch Container Insights和VPC流量日志。启用AWS CloudTrail日志。"
     },
-    "best": ["D"],
+    "best": ["B"],
     "analysis": {
       "A": "虽然这个选项提供了日志存储和分析的功能，但它没有提供对网络流量的分析，这是题目要求的一个关键部分。",
       "B": "这个选项启用了Amazon Detective，可以帮助调查安全事件，但它缺乏对网络流量的直接监控和分析。",
@@ -6932,7 +6929,7 @@
       "D": "对于非关键数据，创建第二个自动扩展组，使用启动模板。配置启动模板以安装统一的Amazon CloudWatch代理，并使用自定义内存利用率指标配置CloudWatch代理。使用Spot实例。将新的自动扩展组添加为ALB的目标组。修改应用程序以使用两个目标组处理关键数据和非关键数据。",
       "E": "对于非关键数据，创建第二个自动扩展组。选择预定义的内存利用率指标类型作为目标跟踪扩展策略。使用Spot实例。将新的自动扩展组添加为ALB的目标组。修改应用程序以使用两个目标组处理关键数据和非关键数据。"
     },
-    "best": ["B", "E"],
+    "best": ["B", "D"],
     "analysis": {
       "A": "使用Spot实例可能会导致关键数据处理中断，因为Spot实例可能会被回收，不适合关键任务。",
       "B": "使用按需实例确保关键数据处理的连续性，预热池可以减少扩展延迟，是最优选择。",
@@ -7118,7 +7115,7 @@
       "C": "创建一个 Systems Manager Run Command 任务，指定所需的实例配置。在 Systems Manager Maintenance Windows 中创建一个每日运行的维护窗口。注册 Run Command 任务到维护窗口。指定目标。",
       "D": "创建一个 Systems Manager Patch Manager 补丁基线和一个使用 Auto Scaling 组应用的相同标签的补丁组。将补丁组注册到补丁基线。定义一个 Systems Manager 命令文档来补丁实例。使用 Systems Manager Run Command 调用文档。"
     },
-    "best": ["C"],
+    "best": ["B"],
     "analysis": {
       "A": "此选项使用 Run Command 文档和 Compliance，但主要关注补丁合规性，而不是操作系统配置。",
       "B": "此选项创建了 State Manager 关联和标签查询，但没有明确说明如何确保操作系统配置的正确性。",
