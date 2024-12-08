@@ -1265,12 +1265,12 @@
       "C": "创建一个 Amazon EventBridge 规则，该规则对 pullRequestCreated 和 pullRequestSourceBranchUpdated 事件做出反应。创建一个 AWS Lambda 函数，该函数调用一个带有 CodeBuild 动作的 CodePipeline 管道来运行应用程序的测试。编程 Lambda 函数在拉取请求上发布 CodeBuild 徽章作为评论，以便开发人员在代码审查中看到徽章。",
       "D": "创建一个 Amazon EventBridge 规则，该规则对 pullRequestStatusChanged 事件做出反应。创建一个 AWS Lambda 函数，该函数调用一个带有 CodeBuild 动作的 CodePipeline 管道来运行应用程序的测试。编程 Lambda 函数在测试结果完成时在拉取请求上发布 CodeBuild 测试结果作为评论。"
     },
-    "best": ["B"],
+    "best": ["C"],
     "analysis": {
-      "A": "此选项不是最佳选择，因为它仅在 pullRequestStatusChanged 事件发生时触发，这可能不会涵盖所有必要的测试场景。",
-      "B": "此选项是最佳选择，因为它在创建拉取请求时立即触发测试，并在测试完成后将结果作为评论发布，这确保了测试的及时性和可见性。",
-      "C": "此选项不是最佳选择，尽管它覆盖了创建和更新源分支的事件，但仅发布徽章而不是详细的测试结果，可能不足以提供足够的信息。",
-      "D": "此选项不是最佳选择，因为它仅在 pullRequestStatusChanged 事件发生时触发，这可能不会涵盖所有必要的测试场景。"
+      "A": "这个事件只在PR状态改变时触发(如开启/关闭PR)，不适合用于代码测试",
+      "B": "如果PR源分支更新，无法触发新的测试",
+      "C": "同时监听pullRequestCreated和pullRequestSourceBranchUpdated事件，优点：在PR创建时运行测试，当PR源分支更新时重新运行测试，确保代码变更都经过测试，使用CodeBuild badge显示结果",
+      "D": "与A选项类似的问题,并且虽然提供详细测试结果，但触发时机不对"
     },
     "service": [
       "AWS CodeCommit",
@@ -1280,7 +1280,7 @@
       "Amazon EventBridge",
       "AWS Lambda"
     ],
-    "reason": "1.2"
+    "reason": "重要事件说明：\n\npullRequestCreated：新建PR时触发\npullRequestSourceBranchUpdated：PR源分支更新时触发\npullRequestStatusChanged：PR状态变化时触发（如开启/关闭）"
   },
   {
     "no": 50,
@@ -1413,9 +1413,9 @@
     "best": ["A", "E"],
     "analysis": {
       "A": "这是最佳选项之一，因为它允许 QA 团队在生产部署之前手动审查和批准构件。",
-      "B": "这不是最佳选项，因为它涉及到修改构建规范，可能会影响构建过程的自动化和效率。",
-      "C": "这不是最佳选项，因为虽然它提供了审批机制，但不涉及到 QA 团队对构件的检查或渗透测试。",
-      "D": "这不是最佳选项，因为直接调用 API 可能会绕过 QA 团队的审查过程。",
+      "B": "这不是最佳选项，因为buildspec.yml不支持手动审批功能，这是构建配置文件，不适合添加审批流程",
+      "C": "这不是最佳选项，CodeDeploy部署组不支持手动审批，这是部署配置，不适合添加审批流程",
+      "D": "这不是最佳选项，因为CodePipeline没有直接调用REST API的能力",
       "E": "这是最佳选项之一，因为它通过 Lambda 函数提供了一个灵活的方式来调用渗透测试工具，同时保持了管道的自动化和控制。"
     },
     "service": [
@@ -1450,7 +1450,7 @@
       "Amazon Route 53",
       "Application Load Balancer"
     ],
-    "reason": "1.4"
+    "reason": ""
   },
   {
     "no": 60,
@@ -1497,7 +1497,7 @@
       "D": "这个选项创建了一个服务角色并仅授予开发者角色 iam:PassRole 权限，这允许开发者仅将服务角色传递给 CloudFormation，符合最小权限原则。"
     },
     "service": ["AWS CloudFormation", "IAM"],
-    "reason": "2.1"
+    "reason": "选择 D 是因为它提供了最符合最小权限原则的解决方案：1) 创建一个服务角色，该角色仅具有部署特定资源所需的权限 2) 开发人员角色只被授予 iam:PassRole 权限，使其能够将服务角色传递给 CloudFormation 3) 开发人员不直接获得任何额外的资源访问权限 4) CloudFormation 使用服务角色来执行实际的资源创建操作。这种方式既确保了开发人员能够部署堆栈，又最大限度地减少了权限范围。"
   },
   {
     "no": 62,
@@ -1521,33 +1521,32 @@
   },
   {
     "no": 58,
-    "question": "一家公司在 Amazon EC2 实例上运行一个应用程序。该公司使用一系列 AWS CloudFormation 堆栈来定义应用程序资源。开发人员通过在笔记本电脑上构建和测试应用程序，然后将构建输出和 CloudFormation 堆栈模板上传到 Amazon S3 来执行更新。开发人员的同事在开发人员执行 CloudFormation 堆栈更新并将新版本的应用程序安装到 EC2 实例上之前审查更改。部署过程容易出错，当开发人员更新每个 EC2 实例上的新应用程序时，耗时较长。公司希望尽可能自动化应用程序部署过程，同时保留在修改应用程序或资源之前的最终手动审批步骤。公司已将应用程序的源代码和 CloudFormation 模板移至 AWS CodeCommit。公司还创建了一个 AWS CodeBuild 项目来构建和测试应用程序。哪两个步骤的组合将满足公司的要求？（选择两项。）",
+    "question": "一家公司在 Amazon EC2 实例上运行应用程序。该公司使用一系列 AWS CloudFormation 堆栈来定义应用程序资源。开发人员通过在笔记本电脑上构建和测试应用程序，然后将构建输出和 CloudFormation 堆栈模板上传到 Amazon S3 来执行更新。开发人员的同事在开发人员执行 CloudFormation 堆栈更新并在 EC2 实例上安装新版本的应用程序之前审查更改。当开发人员使用新应用程序更新每个 EC2 实例时，部署过程容易出错且耗时。该公司希望尽可能自动化应用程序部署过程，同时在修改应用程序或资源之前保留最终手动审批步骤。该公司已将应用程序的源代码和 CloudFormation 模板移至 AWS CodeCommit。该公司还创建了一个 AWS CodeBuild 项目来构建和测试应用程序。",
     "choose": 2,
     "options": {
       "A": "在 AWS CodeDeploy 中创建应用程序组和部署组。在 EC2 实例上安装 CodeDeploy 代理。",
-      "B": "在 AWS CodeDeploy 中创建应用程序修订版和部署组。在 CodeDeploy 中创建环境。将 EC2 实例注册到 CodeDeploy 环境。",
-      "C": "使用 AWS CodePipeline 调用 CodeBuild 作业，运行 CloudFormation 更新，并暂停以进行手动审批步骤。审批后，启动 AWS CodeDeploy 部署。",
-      "D": "使用 AWS CodePipeline 调用 CodeBuild 作业，为每个应用程序堆栈创建 CloudFormation 更改集，并暂停以进行手动审批步骤。审批后，运行 CloudFormation 更改集并启动 AWS CodeDeploy 部署。",
-      "E": "使用 AWS CodePipeline 调用 CodeBuild 作业，为每个应用程序堆栈创建 CloudFormation 更改集，并暂停以进行手动审批步骤。审批后，启动 AWS CodeDeploy 部署。"
+      "B": "在 AWS CodeDeploy 中创建应用程序修订和部署组。在 CodeDeploy 中创建环境。将 EC2 实例注册到 CodeDeploy 环境。",
+      "C": "使用 AWS CodePipeline 调用 CodeBuild 作业，运行 CloudFormation 更新，并暂停以等待手动审批步骤。批准后，启动 AWS CodeDeploy 部署。",
+      "D": "使用 AWS CodePipeline 调用 CodeBuild 作业，为每个应用程序堆栈创建 CloudFormation 变更集，并暂停以等待手动审批步骤。批准后，运行 CloudFormation 变更集并启动 AWS CodeDeploy 部署。",
+      "E": "使用 AWS CodePipeline 调用 CodeBuild 作业，为每个应用程序堆栈创建 CloudFormation 变更集，并暂停以等待手动审批步骤。批准后，启动 AWS CodeDeploy 部署。"
     },
-    "best": ["D", "E"],
+    "best": ["A", "D"],
     "analysis": {
-      "A": "此选项提供了在 CodeDeploy 中创建应用程序组和部署组的步骤，以及在 EC2 实例上安装 CodeDeploy 代理的步骤。虽然这是自动化部署的一部分，但它没有涵盖使用 CodePipeline 来集成和自动化整个流程。",
-      "B": "此选项提到了在 CodeDeploy 中创建环境并注册 EC2 实例，但这不是 AWS CodeDeploy 的标准用法，因此可能会引起混淆。",
-      "C": "此选项包括使用 CodePipeline 调用 CodeBuild 和运行 CloudFormation 更新，但没有提到创建 CloudFormation 更改集，这是最佳实践，以确保更新可以在执行前进行审查。",
-      "D": "此选项完整地描述了使用 CodePipeline 来自动化构建、审批和部署过程，包括创建 CloudFormation 更改集和在审批后执行这些更改集以及启动 CodeDeploy 部署的步骤。",
-      "E": "此选项与选项 D 类似，但在审批后直接启动 CodeDeploy 部署，没有明确执行更改集。这可能是一个更简化的流程，但在某些情况下可能需要执行更改集以确保更精确的控制。"
+      "A": "正确。要使用 CodeDeploy 进行部署，必须在 EC2 实例上安装 CodeDeploy 代理。",
+      "B": "错误。CodeDeploy 没有'环境'的概念，且不需要手动注册 EC2 实例（使用标签过滤）。",
+      "C": "错误。审批步骤后直接运行 CloudFormation 更新，没有使用变更集进行审查，流程不完整。",
+      "D": "正确。完整的部署流程：调用 CodeBuild、创建变更集、手动审批、执行变更集、启动 CodeDeploy 部署。",
+      "E": "错误。缺少执行 CloudFormation 变更集的步骤，流程不完整。"
     },
     "service": [
-      "AWS CodeCommit",
-      "AWS CodeBuild",
       "AWS CodeDeploy",
+      "AWS CodeBuild",
       "AWS CodePipeline",
-      "Amazon S3",
+      "AWS CloudFormation",
       "Amazon EC2",
-      "AWS CloudFormation"
+      "Amazon S3"
     ],
-    "reason": "1.1"
+    "reason": "选择 A 和 D 是因为它们共同提供了一个完整的自动化部署解决方案：A 确保了 CodeDeploy 可以在 EC2 实例上执行部署，D 提供了完整的部署流水线，包括构建、变更集审查、手动审批和部署步骤。这个组合满足了公司自动化部署同时保留手动审批的要求。"
   },
   {
     "no": 55,
@@ -1877,7 +1876,7 @@
       "C": "所有管道中的所有事件",
       "D": "所有管道中的审批操作"
     },
-    "best": ["A"],
+    "best": ["B"],
     "analysis": {
       "A": "这是最优选项，因为事件模式指定了对失败的状态进行匹配，这通常涉及部署和构建操作的失败。",
       "B": "这不是最优选项，因为事件模式没有特别指出审批操作，而是更广泛地关注于执行状态的失败。",
@@ -2581,12 +2580,12 @@
       "C": "将所有账户置于组织内的一个新的顶级 OU 下。创建一个 SCP 以拒绝访问受限制的 AWS 服务。将 SCP 附加到 OU。",
       "D": "创建一个仅允许访问批准的 AWS 服务的 SCP。将 SCP 附加到组织的根 OU。从组织的根 OU 中移除 FullAWSAccess SCP。"
     },
-    "best": ["C"],
+    "best": ["D"],
     "analysis": {
       "A": "不正确。使用CloudFormation StackSets和IAM策略在每个账户中管理访问权限不是最佳方案，因为这种方法难以维护且容易被账户管理员修改或删除。",
       "B": "不正确。虽然AWS Control Tower提供了良好的账户治理，但使用IAM Identity Center的拒绝策略不是实施服务访问限制的最佳方式，因为它仍可能被账户管理员绕过。",
-      "C": "正确。使用SCP限制服务访问是最佳实践，因为：它在组织级别实施，不能被成员账户绕过；易于管理和更新；不影响账户的管理权限；可以统一应用于所有账户。",
-      "D": "不正确。在根OU附加允许列表SCP并移除FullAWSAccess过于严格，可能导致意外的服务中断。使用拒绝列表更灵活且安全。"
+      "C": "不正确。使用拒绝列表意味着默认情况下团队可以访问任何新服务（黑名单方式），直到被明确拒绝，这与服务必须先获得批准才能使用的要求不符",
+      "D": "创建一个只允许访问已批准服务的 SCP（白名单方式）确保团队只能使用公司批准的服务，将 SCP 附加到组织的根 OU 并移除 FullAWSAccess SCP 确保策略在整个组织范围内生效，团队在已批准服务的范围内仍然保留管理权限，这与审批流程相符，因为新服务可以在获得批准后添加到允许列表中"
     },
     "service": [
       "AWS Organizations",
@@ -2596,7 +2595,7 @@
       "AWS IAM Identity Center",
       "Service Control Policies (SCP)"
     ],
-    "reason": "选择C是最佳解决方案，因为：将所有账户放在新的顶级OU下并使用SCP实施服务限制提供了最佳的平衡；SCP可以有效限制未经批准服务的访问，同时不影响团队对其账户的管理权限；这种方法易于维护，只需更新SCP即可添加或删除限制的服务；它确保了强制执行，因为SCP不能被成员账户覆盖或修改；符合AWS最佳实践的权限管理方式；提供了清晰的组织结构和访问控制层次。"
+    "reason": "每个团队必须保留对其 AWS 账户的完全管理权限，每个团队只能访问公司批准的 AWS 服务，AWS 服务必须通过申请和批准流程"
   },
   {
     "no": 108,
@@ -4188,7 +4187,7 @@
       "E": "部署 Customizations for AWS Control Tower (CfCT) CloudFormation 堆栈。",
       "F": "创建一个包含每个自定义资源的 CloudFormation 模板。"
     },
-    "best": ["B", "D", "E"],
+    "best": ["B", "C", "F"],
     "analysis": {
       "A": "虽然启用受信任的访问对于集成服务很重要，但这一步骤并不直接涉及到通过 AWS Control Tower 提供自定义。",
       "B": "这是最佳选项之一，因为它涉及到创建一个可以由管理账户中的 AWSControlTowerAdmin 角色扮演的 IAM 角色，这对于管理和部署自定义至关重要。",
@@ -5864,7 +5863,7 @@
       "C": "删除失败是因为自定义资源没有定义删除策略。向自定义资源定义中添加 DeletionPolicy 属性，其值为 RemoveOnDeletion。",
       "D": "删除失败是因为 S3 存储桶不为空。修改 CloudFormation 模板中的 S3 存储桶资源，添加 DeletionPolicy 属性，其值为 Empty。"
     },
-    "best": ["D"],
+    "best": ["B"],
     "analysis": {
       "A": "虽然删除网站配置是一个必要步骤，但仅仅移除配置并不能解决存储桶中已有内容导致的删除失败问题。",
       "B": "虽然这种方法可以清空存储桶，但它需要修改 Lambda 函数代码，这可能不是最直接或最简单的解决方案。",
@@ -5946,7 +5945,7 @@
       "E": "在 Amazon CloudWatch Logs 中创建日志组，并将该日志组指定为 EventBridge 规则的额外目标。",
       "F": "更新应用程序代码库，使用 AWS X-Ray SDK 跟踪功能为代码添加支持 X-Amzn-Trace-Id 标头的工具。"
     },
-    "best": ["C", "D", "E"],
+    "best": ["B", "C", "E"],
     "analysis": {
       "A": "AWS Device Farm 主要用于应用程序测试，而不是用于事件查看、排除故障或防止事件丢失。",
       "B": "虽然 CloudTrail 可以用于审计和监控 AWS 账户的活动，但它并不直接帮助查看或排除 EventBridge 事件传递问题。",
@@ -5976,7 +5975,7 @@
       "C": "在每个实例上配置 AWS Systems Manager。使用 Systems Manager Inventory。在 AWS CloudTrail 中过滤 Systems Manager Inventory 事件的轨迹以识别禁止的应用程序。",
       "D": "指定 Amazon CloudWatch Logs 为所有应用程序实例的日志目的地。在所有实例上运行自动化脚本以创建已安装应用程序的清单。配置脚本将结果转发到 CloudWatch Logs。创建一个 CloudWatch 警报，使用过滤模式搜索日志数据以识别禁止的应用程序。"
     },
-    "best": ["A"],
+    "best": ["B"],
     "analysis": {
       "A": "这是最佳选项，因为它使用 AWS Systems Manager 来管理和审计 EC2 实例，同时利用 Lambda 函数自动处理 S3 存储桶中的数据，从而提高操作效率。",
       "B": "此选项不是最佳选择，因为它依赖于 AWS Config 规则来监控更改，这可能不如选项 A 中的自动化 Lambda 函数处理高效。",
@@ -6299,7 +6298,7 @@
       "D": "在开发账户中从CloudFormation模板创建一个开发环境。安排一个Amazon EventBridge规则每周启动一次AWS Step Functions状态机。",
       "E": "在开发账户中从CloudFormation模板创建一个开发环境。安排一个Amazon EC2实例上的cron作业每周运行一次以启动S3批处理操作作业。"
     },
-    "best": ["A", "C"],
+    "best": ["A", "D"],
     "analysis": {
       "A": "这是最佳选项之一，因为它涉及使用Amazon Macie来发现和红色处理PII，然后使用AWS Step Functions来自动化数据的复制和加密/解密过程，确保在不同的环境中使用不同的KMS密钥。",
       "B": "这个选项不是最佳的，因为它在数据复制到开发环境之后才进行PII的处理，这可能导致PII暴露。",
@@ -6452,7 +6451,7 @@
       "D": "配置一个 Amazon EventBridge 规则在映像扫描完成时调用一个 AWS Lambda 函数。配置 Lambda 函数以消费 Amazon Inspector 扫描状态，并向 CI/CD 管道提交批准或拒绝状态。",
       "E": "配置一个 Amazon EventBridge 规则在映像扫描完成时调用一个 AWS Lambda 函数。配置 Lambda 函数以消费 Clair 扫描状态，并向 CI/CD 管道提交批准或拒绝状态。"
     },
-    "best": ["B", "C"],
+    "best": ["B", "D"],
     "analysis": {
       "A": "基本扫描可能不足以检测所有关键和高级别的漏洞。",
       "B": "增强扫描提供了更深入的安全检查，能够识别 CRITICAL 和 HIGH 级别的漏洞。",
@@ -6727,7 +6726,7 @@
       "D": "更新 CodeArtifact 包的原始控制设置以允许直接发布并阻止上游操作。",
       "E": "更新 CodeArtifact 包的原始控制设置以阻止直接发布并允许上游操作。"
     },
-    "best": ["A", "D"],
+    "best": ["C", "D"],
     "analysis": {
       "A": "将包版本状态设置为未列出可以阻止新的客户端下载，但不影响已经下载的客户端，这是一个有效的步骤来阻止进一步的下载。",
       "B": "删除包版本会从仓库中完全移除该版本，这可能不是最佳选择，因为它可能影响到需要回滚到旧版本的情况。",
@@ -6803,7 +6802,7 @@
       "E": "通过使用 Service 维度分析 ContainerInsights 命名空间中的 pod_memory_utilization Amazon CloudWatch 指标。",
       "F": "通过使用 ClusterName 维度分析 ContainerInsights 命名空间中的 node_memory_utilization Amazon CloudWatch 指标。"
     },
-    "best": ["C", "E", "F"],
+    "best": ["A", "C", "E"],
     "analysis": {
       "A": "虽然这个选项确实涉及到 IAM 策略，但它不直接涉及到收集或分析内存指标的能力。",
       "B": "这个选项也是关于 IAM 策略，但它不是直接收集或分析内存指标的最佳方式。",
@@ -6899,7 +6898,7 @@
       "C": "启用Amazon CloudWatch Container Insights。启用AWS CloudTrail日志。将EKS审计日志和CloudTrail日志文件存储在Amazon S3桶中。使用Amazon Athena创建外部表。使用Amazon QuickSight创建仪表板。",
       "D": "启用Amazon GuardDuty用于EKS审计日志监控。启用Amazon CloudWatch Container Insights和VPC流量日志。启用AWS CloudTrail日志。"
     },
-    "best": ["D"],
+    "best": ["B"],
     "analysis": {
       "A": "虽然这个选项提供了日志存储和分析的功能，但它没有提供对网络流量的分析，这是题目要求的一个关键部分。",
       "B": "这个选项启用了Amazon Detective，可以帮助调查安全事件，但它缺乏对网络流量的直接监控和分析。",
@@ -6930,7 +6929,7 @@
       "D": "对于非关键数据，创建第二个自动扩展组，使用启动模板。配置启动模板以安装统一的Amazon CloudWatch代理，并使用自定义内存利用率指标配置CloudWatch代理。使用Spot实例。将新的自动扩展组添加为ALB的目标组。修改应用程序以使用两个目标组处理关键数据和非关键数据。",
       "E": "对于非关键数据，创建第二个自动扩展组。选择预定义的内存利用率指标类型作为目标跟踪扩展策略。使用Spot实例。将新的自动扩展组添加为ALB的目标组。修改应用程序以使用两个目标组处理关键数据和非关键数据。"
     },
-    "best": ["B", "E"],
+    "best": ["B", "D"],
     "analysis": {
       "A": "使用Spot实例可能会导致关键数据处理中断，因为Spot实例可能会被回收，不适合关键任务。",
       "B": "使用按需实例确保关键数据处理的连续性，预热池可以减少扩展延迟，是最优选择。",
@@ -7116,7 +7115,7 @@
       "C": "创建一个 Systems Manager Run Command 任务，指定所需的实例配置。在 Systems Manager Maintenance Windows 中创建一个每日运行的维护窗口。注册 Run Command 任务到维护窗口。指定目标。",
       "D": "创建一个 Systems Manager Patch Manager 补丁基线和一个使用 Auto Scaling 组应用的相同标签的补丁组。将补丁组注册到补丁基线。定义一个 Systems Manager 命令文档来补丁实例。使用 Systems Manager Run Command 调用文档。"
     },
-    "best": ["C"],
+    "best": ["B"],
     "analysis": {
       "A": "此选项使用 Run Command 文档和 Compliance，但主要关注补丁合规性，而不是操作系统配置。",
       "B": "此选项创建了 State Manager 关联和标签查询，但没有明确说明如何确保操作系统配置的正确性。",
