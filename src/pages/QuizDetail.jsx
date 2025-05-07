@@ -123,6 +123,19 @@ function QuizDetail() {
   const nextQuestion = () => navigateQuestion(currentQuestionIndex + 1);
   const previousQuestion = () => navigateQuestion(currentQuestionIndex - 1);
   const goToQuestion = (index) => navigateQuestion(index);
+  
+  // 清除 quizState 的函数
+  const clearQuizState = () => {
+    const newQuizState = {
+      answeredQuestions: {},
+      lastIndex: 0,
+    };
+    localStorage.removeItem("quizState");
+    setState({
+      quizState: newQuizState,
+      currentQuestionIndex: 0,
+    });
+  };
 
   // 辅助函数：确定答题卡按钮颜色
   const getAnswerCardColor = (answered, correct) => {
@@ -224,6 +237,15 @@ function QuizDetail() {
           >
             上一题
           </button>
+          
+          {/* 清除测验状态按钮 */}
+          <button
+            onClick={clearQuizState}
+            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md shadow transition duration-300 ease-in-out"
+          >
+            重置测验
+          </button>
+          
           <button
             onClick={nextQuestion}
             disabled={currentQuestionIndex === questions.length - 1}
